@@ -54,6 +54,8 @@ export default function AudioPlayer({
   const currentAyahRef = useRef(currentAyah);
   const surahNumberRef = useRef(surahNumber);
   const selectedReciterRef = useRef(settings.selectedReciter);
+  const effectiveReciterRef = useRef(settings.selectedReciter);
+
   useEffect(() => {
     currentAyahRef.current = currentAyah;
   }, [currentAyah]);
@@ -62,30 +64,24 @@ export default function AudioPlayer({
   }, [surahNumber]);
   useEffect(() => {
     selectedReciterRef.current = settings.selectedReciter;
+    effectiveReciterRef.current = settings.selectedReciter;
   }, [settings.selectedReciter]);
-
-  // Avoid infinite fallback loops
-  const fallbackTriedRef = useRef<Record<string, boolean>>({});
 
   // Get current reciter name
   const currentReciter = RECITERS.find((r) => r.identifier === settings.selectedReciter);
   const [continuousPlay, setContinuousPlay] = useState(true); // Auto-continue to next surah
 
-  const tryFallbackReciter = useCallback(() => {
+  const switchToFallbackReciter = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return false;
 
-    const selected = selectedReciterRef.current;
+    if (effectiveReciterRef.current === 'ar.alafasy') return false;
+
+    effectiveReciterRef.current = 'ar.alafasy';
+
     const ayahNum = currentAyahRef.current;
     const surahNum = surahNumberRef.current;
 
-    if (selected === 'ar.alafasy') return false;
-
-    const key = `${surahNum}:${ayahNum}:${selected}`;
-    if (fallbackTriedRef.current[key]) return false;
-    fallbackTriedRef.current[key] = true;
-
-    // Fall back to a highly-available reciter so audio still plays.
     const fallbackUrl = getAyahAudioUrl(surahNum, ayahNum, 'ar.alafasy');
     setError('Selected Qari audio unavailable — switched to Alafasy for playback.');
 
@@ -129,7 +125,7 @@ export default function AudioPlayer({
       setIsPlaying(false);
 
       // Try one automatic fallback before surfacing an error.
-      const didFallback = tryFallbackReciter();
+      const didFallback = switchToFallbackReciter();
       if (!didFallback) {
         setError('Audio failed to load');
       }
@@ -164,7 +160,7 @@ export default function AudioPlayer({
       audio.src = '';
       preload.src = '';
     };
-  }, [tryFallbackReciter]);
+  }, [switchToFallbackReciter]);
 
   // Load audio when ayah or reciter changes
   useEffect(() => {
@@ -195,25 +191,36 @@ export default function AudioPlayer({
   const loadAudio = useCallback(
     (ayahNum: number) => {
       if (!audioRef.current) return;
+
+      const reciter = effectiveReciterRef.current;
+      const url = getAyahAudioUrl(surahNumber, ayahNum, reciter);
+
+      // If we're already on this URL (e.g., we started from preloaded audio), don't reload.
+      if (audioRef.current.src === url) return;
+
       setIsLoading(true);
       setError(null);
-      const url = getAyahAudioUrl(surahNumber, ayahNum, settings.selectedReciter);
       audioRef.current.src = url;
       audioRef.current.load();
     },
-    [surahNumber, settings.selectedReciter]
+    [surahNumber]
   );
 
   // Preload the next ayah for instant transitions
   const preloadNextAyah = useCallback(
     (nextAyahNum: number, nextSurahNum?: number) => {
       if (!preloadRef.current) return;
+
+      const reciter = effectiveReciterRef.current;
       const surah = nextSurahNum || surahNumber;
-      const url = getAyahAudioUrl(surah, nextAyahNum, settings.selectedReciter);
+      const url = getAyahAudioUrl(surah, nextAyahNum, reciter);
+
+      if (preloadRef.current.src === url) return;
+
       preloadRef.current.src = url;
       preloadRef.current.load();
     },
-    [surahNumber, settings.selectedReciter]
+    [surahNumber]
   );
 
   // Preload next ayah when current one is playing
@@ -237,8 +244,26 @@ export default function AudioPlayer({
     }
 
     if (currentAyah < totalAyahs) {
+      const nextAyah = currentAyah + 1;
+
+      const reciter = effectiveReciterRef.current;
+      const nextUrl = getAyahAudioUrl(surahNumber, nextAyah, reciter);
+      const preload = preloadRef.current;
+      const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 3;
+
       wasPlayingRef.current = true; // Keep playing for next ayah
-      onAyahChange(currentAyah + 1);
+
+      if (canUsePreload) {
+        setError(null);
+        setIsLoading(false);
+        audio.src = preload.src;
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // Ignore; user can press play.
+        });
+      }
+
+      onAyahChange(nextAyah);
       return;
     }
 
@@ -268,6 +293,9 @@ export default function AudioPlayer({
       wasPlayingRef.current = false;
       audioRef.current.pause();
     } else {
+      // If user presses play after an earlier failure, ensure we're using the selected reciter again.
+      effectiveReciterRef.current = settings.selectedReciter;
+
       wasPlayingRef.current = true;
       setIsLoading(true);
       audioRef.current

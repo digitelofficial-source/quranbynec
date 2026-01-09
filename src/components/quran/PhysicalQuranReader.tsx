@@ -18,14 +18,52 @@ export default function PhysicalQuranReader() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSurah, setSelectedSurah] = useState(1);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlayingAyah, setCurrentPlayingAyah] = useState<number | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRef = useRef<HTMLAudioElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.ceil(ayahs.length / AYAHS_PER_PAGE);
   const startIndex = (currentPage - 1) * AYAHS_PER_PAGE;
   const pageAyahs = ayahs.slice(startIndex, startIndex + AYAHS_PER_PAGE);
+
+  // Refs for stable event handlers
+  const pageAyahsRef = useRef<AyahWithTranslation[]>(pageAyahs);
+  const currentPlayingAyahRef = useRef<number | null>(currentPlayingAyah);
+  const selectedSurahRef = useRef(selectedSurah);
+  const effectiveReciterRef = useRef(settings.selectedReciter);
+  const wasPlayingRef = useRef(false);
+
+  useEffect(() => {
+    pageAyahsRef.current = pageAyahs;
+  }, [pageAyahs]);
+
+  useEffect(() => {
+    currentPlayingAyahRef.current = currentPlayingAyah;
+  }, [currentPlayingAyah]);
+
+  useEffect(() => {
+    selectedSurahRef.current = selectedSurah;
+
+    // Stop any ongoing playback when switching surah to avoid mismatched audio.
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    wasPlayingRef.current = false;
+    setIsPlaying(false);
+    setCurrentPlayingAyah(null);
+    setAudioError(null);
+  }, [selectedSurah]);
+
+  useEffect(() => {
+    effectiveReciterRef.current = settings.selectedReciter;
+    setAudioError(null);
+  }, [settings.selectedReciter]);
 
   useEffect(() => {
     async function loadSurah() {
@@ -44,44 +82,137 @@ export default function PhysicalQuranReader() {
     loadSurah();
   }, [selectedSurah, settings.selectedTranslation]);
 
-  // Audio setup - create audio element once
+  // Audio setup - create audio element + preloader once
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
-    
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audioRef.current = audio;
+
+    const preload = new Audio();
+    preload.preload = 'auto';
+    preload.volume = 0; // silent preload
+    preloadRef.current = preload;
+
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
+      audio.pause();
+      audio.src = '';
+      preload.src = '';
     };
   }, []);
 
-  // Audio event handlers
+  // Apply playback speed
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = settings.playbackSpeed;
+    }
+  }, [settings.playbackSpeed]);
+
+  const preloadAyah = useCallback((ayahNum: number) => {
+    const preload = preloadRef.current;
+    if (!preload) return;
+
+    const url = getAyahAudioUrl(selectedSurahRef.current, ayahNum, effectiveReciterRef.current);
+    if (preload.src === url) return;
+
+    preload.src = url;
+    preload.load();
+  }, []);
+
+  const playAyah = useCallback(
+    (ayahNum: number, opts?: { usePreloaded?: boolean }) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      const url = getAyahAudioUrl(selectedSurahRef.current, ayahNum, effectiveReciterRef.current);
+      const preload = preloadRef.current;
+
+      const canUsePreload =
+        !!opts?.usePreloaded &&
+        !!preload &&
+        preload.src === url &&
+        preload.readyState >= 3;
+
+      setAudioError(null);
+      wasPlayingRef.current = true;
+
+      if (canUsePreload) {
+        audio.src = preload.src;
+        audio.currentTime = 0;
+      } else if (audio.src !== url) {
+        audio.src = url;
+        audio.load();
+        audio.currentTime = 0;
+      }
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setCurrentPlayingAyah(ayahNum);
+            recordAyahRead();
+          })
+          .catch((error) => {
+            console.error('Playback failed:', error);
+            setAudioError('Playback failed. Click play to try again.');
+            setIsPlaying(false);
+            wasPlayingRef.current = false;
+          });
+      }
+    },
+    [recordAyahRead]
+  );
+
+  // Audio event handlers (stable)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleEnded = () => {
-      if (currentPlayingAyah !== null && pageAyahs.length > 0) {
-        const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
-        if (currentIndex < pageAyahs.length - 1) {
-          // Play next ayah on current page
-          const nextAyah = pageAyahs[currentIndex + 1];
-          playAyah(nextAyah.numberInSurah);
-        } else {
-          // End of page
-          setIsPlaying(false);
-          setCurrentPlayingAyah(null);
-        }
+      const current = currentPlayingAyahRef.current;
+      const list = pageAyahsRef.current;
+
+      if (current == null || list.length === 0) {
+        wasPlayingRef.current = false;
+        setIsPlaying(false);
+        setCurrentPlayingAyah(null);
+        return;
       }
+
+      const idx = list.findIndex((a) => a.numberInSurah === current);
+      if (idx >= 0 && idx < list.length - 1) {
+        const nextAyah = list[idx + 1].numberInSurah;
+        playAyah(nextAyah, { usePreloaded: true });
+        return;
+      }
+
+      // End of page
+      wasPlayingRef.current = false;
+      setIsPlaying(false);
+      setCurrentPlayingAyah(null);
     };
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+
     const handleError = (e: Event) => {
       console.error('Audio error:', e);
+
+      // One-time fallback to Alafasy so playback doesn't keep breaking.
+      if (effectiveReciterRef.current !== 'ar.alafasy') {
+        effectiveReciterRef.current = 'ar.alafasy';
+        setAudioError('Selected Qari audio unavailable — switched to Alafasy for playback.');
+
+        const ayahToReplay =
+          currentPlayingAyahRef.current ?? pageAyahsRef.current[0]?.numberInSurah;
+
+        if (ayahToReplay != null) {
+          playAyah(ayahToReplay);
+        }
+        return;
+      }
+
+      setAudioError('Audio failed to load. Please try again.');
+      wasPlayingRef.current = false;
       setIsPlaying(false);
     };
 
@@ -96,50 +227,51 @@ export default function PhysicalQuranReader() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
     };
-  }, [currentPlayingAyah, pageAyahs]);
+  }, [playAyah]);
 
-  const playAyah = useCallback((ayahNum: number) => {
-    if (!audioRef.current) return;
-    
-    const audio = audioRef.current;
-    const url = getAyahAudioUrl(selectedSurah, ayahNum, settings.selectedReciter);
-    
-    // Stop current audio if playing
-    audio.pause();
-    audio.currentTime = 0;
-    
-    // Set new source and play
-    audio.src = url;
-    audio.load();
-    
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setCurrentPlayingAyah(ayahNum);
-          recordAyahRead();
-        })
-        .catch((error) => {
-          console.error('Playback failed:', error);
-          setIsPlaying(false);
-        });
+  // Preload the next ayah on the current page while playing
+  useEffect(() => {
+    if (!isPlaying || currentPlayingAyah == null) return;
+
+    const idx = pageAyahs.findIndex((a) => a.numberInSurah === currentPlayingAyah);
+    if (idx >= 0 && idx < pageAyahs.length - 1) {
+      preloadAyah(pageAyahs[idx + 1].numberInSurah);
     }
-  }, [selectedSurah, settings.selectedReciter, recordAyahRead]);
+  }, [isPlaying, currentPlayingAyah, pageAyahs, preloadAyah]);
 
   const togglePlayPage = () => {
-    if (!audioRef.current) return;
-    
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    setAudioError(null);
+
     if (isPlaying) {
-      audioRef.current.pause();
+      wasPlayingRef.current = false;
+      audio.pause();
       setIsPlaying(false);
-    } else if (pageAyahs.length > 0) {
+      return;
+    }
+
+    // Resume if we have an existing source + position
+    if (currentPlayingAyah != null && audio.src) {
+      wasPlayingRef.current = true;
+      audio.play().catch((error) => {
+        console.error('Playback failed:', error);
+        setAudioError('Playback failed. Click play to try again.');
+        wasPlayingRef.current = false;
+        setIsPlaying(false);
+      });
+      return;
+    }
+
+    if (pageAyahs.length > 0) {
       playAyah(pageAyahs[0].numberInSurah);
     }
   };
 
   const playPreviousAyah = () => {
     if (!currentPlayingAyah || pageAyahs.length === 0) return;
-    const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
+    const currentIndex = pageAyahs.findIndex((a) => a.numberInSurah === currentPlayingAyah);
     if (currentIndex > 0) {
       playAyah(pageAyahs[currentIndex - 1].numberInSurah);
     }
@@ -147,20 +279,25 @@ export default function PhysicalQuranReader() {
 
   const playNextAyah = () => {
     if (!currentPlayingAyah || pageAyahs.length === 0) return;
-    const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
-    if (currentIndex < pageAyahs.length - 1) {
-      playAyah(pageAyahs[currentIndex + 1].numberInSurah);
+    const currentIndex = pageAyahs.findIndex((a) => a.numberInSurah === currentPlayingAyah);
+    if (currentIndex >= 0 && currentIndex < pageAyahs.length - 1) {
+      playAyah(pageAyahs[currentIndex + 1].numberInSurah, { usePreloaded: true });
     }
   };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+
       if (audioRef.current && isPlaying) {
         audioRef.current.pause();
-        setIsPlaying(false);
-        setCurrentPlayingAyah(null);
       }
+
+      wasPlayingRef.current = false;
+      setIsPlaying(false);
+      setCurrentPlayingAyah(null);
+      setAudioError(null);
+
       // Scroll to top of scroll area
       if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
