@@ -13,8 +13,9 @@ interface TafsirDialogProps {
   surahName: string;
 }
 
-// Available Tafsir editions from AlQuran.cloud API
+// Available Tafsir editions from AlQuran.cloud API - Extensive list
 const TAFSIR_EDITIONS = [
+  // English Editions
   { identifier: 'en.maududi', name: 'Maududi', language: 'English', type: 'tafsir' },
   { identifier: 'en.sahih', name: 'Saheeh International', language: 'English', type: 'translation' },
   { identifier: 'en.pickthall', name: 'Pickthall', language: 'English', type: 'translation' },
@@ -25,19 +26,127 @@ const TAFSIR_EDITIONS = [
   { identifier: 'en.itani', name: 'Talal Itani', language: 'English', type: 'translation' },
   { identifier: 'en.sarwar', name: 'Muhammad Sarwar', language: 'English', type: 'translation' },
   { identifier: 'en.wahiduddin', name: 'Wahiduddin Khan', language: 'English', type: 'translation' },
+  { identifier: 'en.transliteration', name: 'Transliteration', language: 'English', type: 'translation' },
+  // Urdu Editions
   { identifier: 'ur.jalandhry', name: 'Jalandhry', language: 'Urdu', type: 'translation' },
   { identifier: 'ur.ahmedali', name: 'Ahmed Ali', language: 'Urdu', type: 'translation' },
   { identifier: 'ur.maududi', name: 'Abul Ala Maududi', language: 'Urdu', type: 'tafsir' },
   { identifier: 'ur.junagarhi', name: 'Junagarhi', language: 'Urdu', type: 'translation' },
+  { identifier: 'ur.qadri', name: 'Tahir ul Qadri', language: 'Urdu', type: 'translation' },
+  // Arabic Tafsir
+  { identifier: 'ar.muyassar', name: 'King Fahad Complex', language: 'Arabic', type: 'tafsir' },
+  { identifier: 'ar.jalalayn', name: 'Tafsir al-Jalalayn', language: 'Arabic', type: 'tafsir' },
+  // Bengali Editions
   { identifier: 'bn.bengali', name: 'Muhiuddin Khan', language: 'Bengali', type: 'translation' },
+  { identifier: 'bn.hoque', name: 'Zohurul Hoque', language: 'Bengali', type: 'translation' },
+  // Turkish Editions
   { identifier: 'tr.diyanet', name: 'Diyanet İşleri', language: 'Turkish', type: 'translation' },
+  { identifier: 'tr.yazir', name: 'Elmalılı Hamdi Yazır', language: 'Turkish', type: 'tafsir' },
+  { identifier: 'tr.ozturk', name: 'Yaşar Nuri Öztürk', language: 'Turkish', type: 'translation' },
+  { identifier: 'tr.golpinarli', name: 'Abdulbaki Gölpınarlı', language: 'Turkish', type: 'translation' },
+  { identifier: 'tr.ates', name: 'Süleyman Ateş', language: 'Turkish', type: 'tafsir' },
+  // Indonesian/Malay Editions
   { identifier: 'id.indonesian', name: 'Indonesian Ministry', language: 'Indonesian', type: 'translation' },
+  { identifier: 'id.muntakhab', name: 'Quraish Shihab', language: 'Indonesian', type: 'tafsir' },
+  { identifier: 'ms.basmeih', name: 'Abdullah Basmeih', language: 'Malay', type: 'translation' },
+  // French Editions
   { identifier: 'fr.hamidullah', name: 'Hamidullah', language: 'French', type: 'translation' },
+  { identifier: 'fr.montada', name: 'Montada Foundation', language: 'French', type: 'translation' },
+  // German Editions
+  { identifier: 'de.bubenheim', name: 'Bubenheim & Elyas', language: 'German', type: 'translation' },
   { identifier: 'de.aburida', name: 'Abu Rida', language: 'German', type: 'translation' },
-  { identifier: 'ru.kuliev', name: 'Kuliev', language: 'Russian', type: 'translation' },
+  { identifier: 'de.khoury', name: 'Adel Theodor Khoury', language: 'German', type: 'translation' },
+  { identifier: 'de.zaidan', name: 'Amir Zaidan', language: 'German', type: 'translation' },
+  // Spanish Editions
+  { identifier: 'es.cortes', name: 'Julio Cortes', language: 'Spanish', type: 'translation' },
+  { identifier: 'es.asad', name: 'Muhammad Asad', language: 'Spanish', type: 'translation' },
+  { identifier: 'es.bornez', name: 'Raúl González Bórnez', language: 'Spanish', type: 'translation' },
+  // Portuguese Editions
+  { identifier: 'pt.elhayek', name: 'Samir El-Hayek', language: 'Portuguese', type: 'translation' },
+  { identifier: 'pt.nasr', name: 'Helmi Nasr', language: 'Portuguese', type: 'translation' },
+  // Persian Editions
+  { identifier: 'fa.makarem', name: 'Ayatollah Makarem', language: 'Persian', type: 'tafsir' },
+  { identifier: 'fa.ansarian', name: 'Hussain Ansarian', language: 'Persian', type: 'translation' },
+  { identifier: 'fa.ayati', name: 'Abolqasem Ayati', language: 'Persian', type: 'translation' },
+  { identifier: 'fa.fooladvand', name: 'Mohammad Fooladvand', language: 'Persian', type: 'translation' },
+  { identifier: 'fa.ghomshei', name: 'Elahi Ghomshei', language: 'Persian', type: 'translation' },
+  // Russian Editions
+  { identifier: 'ru.kuliev', name: 'Elmir Kuliev', language: 'Russian', type: 'translation' },
+  { identifier: 'ru.osmanov', name: 'Magomed Osmanov', language: 'Russian', type: 'translation' },
+  { identifier: 'ru.krachkovsky', name: 'Ignaty Krachkovsky', language: 'Russian', type: 'translation' },
+  { identifier: 'ru.abuadel', name: 'Abu Adel', language: 'Russian', type: 'translation' },
+  // Chinese Editions
+  { identifier: 'zh.majian', name: 'Ma Jian', language: 'Chinese', type: 'translation' },
+  { identifier: 'zh.jian', name: 'Ma Jian (Traditional)', language: 'Chinese', type: 'translation' },
+  // Japanese Edition
+  { identifier: 'ja.japanese', name: 'Japanese Translation', language: 'Japanese', type: 'translation' },
+  // Korean Edition
+  { identifier: 'ko.korean', name: 'Korean Translation', language: 'Korean', type: 'translation' },
+  // Italian Editions
+  { identifier: 'it.piccardo', name: 'Hamza Piccardo', language: 'Italian', type: 'translation' },
+  // Dutch Editions
+  { identifier: 'nl.keyzer', name: 'Salomo Keyzer', language: 'Dutch', type: 'translation' },
+  { identifier: 'nl.siregar', name: 'Sofian Siregar', language: 'Dutch', type: 'translation' },
+  // Swedish Edition
+  { identifier: 'sv.bernstrom', name: 'Knut Bernström', language: 'Swedish', type: 'translation' },
+  // Norwegian Edition
+  { identifier: 'no.berg', name: 'Einar Berg', language: 'Norwegian', type: 'translation' },
+  // Polish Edition
+  { identifier: 'pl.bielawskiego', name: 'Józef Bielawski', language: 'Polish', type: 'translation' },
+  // Czech Editions
+  { identifier: 'cs.hrbek', name: 'Ivan Hrbek', language: 'Czech', type: 'translation' },
+  { identifier: 'cs.nykl', name: 'A.R. Nykl', language: 'Czech', type: 'translation' },
+  // Albanian Editions
+  { identifier: 'sq.ahmeti', name: 'Sherif Ahmeti', language: 'Albanian', type: 'translation' },
+  { identifier: 'sq.mehdiu', name: 'Feti Mehdiu', language: 'Albanian', type: 'translation' },
+  // Bosnian Editions
+  { identifier: 'bs.korkut', name: 'Besim Korkut', language: 'Bosnian', type: 'translation' },
+  { identifier: 'bs.mlivo', name: 'Mustafa Mlivo', language: 'Bosnian', type: 'translation' },
+  // Azerbaijani Editions
+  { identifier: 'az.mammadaliyev', name: 'Vasim Mammadaliyev', language: 'Azerbaijani', type: 'translation' },
+  { identifier: 'az.musayev', name: 'Alikhan Musayev', language: 'Azerbaijani', type: 'translation' },
+  // Hindi Editions
+  { identifier: 'hi.hindi', name: 'Hindi Translation', language: 'Hindi', type: 'translation' },
+  { identifier: 'hi.farooq', name: 'Muhammad Farooq Khan', language: 'Hindi', type: 'translation' },
+  // Tamil Edition
+  { identifier: 'ta.tamil', name: 'Tamil Translation', language: 'Tamil', type: 'translation' },
+  // Malayalam Editions
   { identifier: 'ml.abdulhameed', name: 'Abdul Hameed', language: 'Malayalam', type: 'translation' },
-  { identifier: 'hi.hindi', name: 'Hindi', language: 'Hindi', type: 'translation' },
-  { identifier: 'ta.tamil', name: 'Tamil', language: 'Tamil', type: 'translation' },
+  { identifier: 'ml.karakunnu', name: 'Cheriyamundam Hameed', language: 'Malayalam', type: 'translation' },
+  // Telugu Edition
+  { identifier: 'te.maulana', name: 'Maulana Maududi', language: 'Telugu', type: 'translation' },
+  // Swahili Edition
+  { identifier: 'sw.barwani', name: 'Ali Muhsin Al-Barwani', language: 'Swahili', type: 'translation' },
+  // Hausa Edition
+  { identifier: 'ha.gumi', name: 'Abubakar Mahmud Gumi', language: 'Hausa', type: 'translation' },
+  // Somali Edition
+  { identifier: 'so.abduh', name: 'Mahmud Muhammad Abduh', language: 'Somali', type: 'translation' },
+  // Amharic Edition
+  { identifier: 'am.sadiq', name: 'Sadiq & Sani', language: 'Amharic', type: 'translation' },
+  // Thai Edition
+  { identifier: 'th.thai', name: 'Thai Translation', language: 'Thai', type: 'translation' },
+  // Vietnamese Edition
+  { identifier: 'vi.khang', name: 'Hassan Abdulkarim', language: 'Vietnamese', type: 'translation' },
+  // Uzbek Edition
+  { identifier: 'uz.sodik', name: 'Muhammad Sodik', language: 'Uzbek', type: 'translation' },
+  // Kazakh Edition
+  { identifier: 'kk.altai', name: 'Khalifa Altai', language: 'Kazakh', type: 'translation' },
+  // Tajik Edition
+  { identifier: 'tg.ayati', name: 'Tajik Translation', language: 'Tajik', type: 'translation' },
+  // Kurdish Edition
+  { identifier: 'ku.asan', name: 'Burhan Muhammad-Amin', language: 'Kurdish', type: 'translation' },
+  // Sindhi Edition
+  { identifier: 'sd.amroti', name: 'Taj Mehmood Amroti', language: 'Sindhi', type: 'translation' },
+  // Pashto Edition
+  { identifier: 'ps.abdulwali', name: 'Abdul Wali Khan', language: 'Pashto', type: 'translation' },
+  // Uyghur Edition
+  { identifier: 'ug.saleh', name: 'Muhammad Saleh', language: 'Uyghur', type: 'translation' },
+  // Romanian Edition
+  { identifier: 'ro.grigore', name: 'George Grigore', language: 'Romanian', type: 'translation' },
+  // Bulgarian Edition
+  { identifier: 'bg.theophanov', name: 'Tzvetan Theophanov', language: 'Bulgarian', type: 'translation' },
+  // Divehi Edition
+  { identifier: 'dv.divehi', name: 'Office of President', language: 'Divehi', type: 'translation' },
 ];
 
 const LANGUAGES = [...new Set(TAFSIR_EDITIONS.map(e => e.language))];

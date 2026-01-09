@@ -140,31 +140,172 @@ export interface DailyStats {
 }
 
 export const RECITERS: Reciter[] = [
+  // Most Popular Reciters
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishary Rashid Alafasy' },
-  { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Samad' },
+  { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Basit Abdul Samad' },
   { identifier: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', englishName: 'Abdurrahmaan As-Sudais' },
   { identifier: 'ar.saoodshuraym', name: 'سعود الشريم', englishName: 'Saud Al-Shuraim' },
   { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
   { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary' },
   { identifier: 'ar.ahmedajamy', name: 'أحمد العجمي', englishName: 'Ahmed Al Ajmi' },
   { identifier: 'ar.shaatree', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Ash-Shaatree' },
+  // Additional World-Famous Reciters
+  { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi' },
+  { identifier: 'ar.minshawimujawwad', name: 'المنشاوي مجود', englishName: 'Al-Minshawi (Mujawwad)' },
+  { identifier: 'ar.husarymujawwad', name: 'الحصري مجود', englishName: 'Al-Husary (Mujawwad)' },
+  { identifier: 'ar.muhammadayyoub', name: 'محمد أيوب', englishName: 'Muhammad Ayyub' },
+  { identifier: 'ar.muhammadjibreel', name: 'محمد جبريل', englishName: 'Muhammad Jibreel' },
+  { identifier: 'ar.parhizgar', name: 'شهريار پرهیزگار', englishName: 'Shahriar Parhizgar' },
+  { identifier: 'ar.aaboromee', name: 'إبراهيم الدوسري', englishName: 'Ibrahim Al-Dossari' },
+  { identifier: 'ar.haboromee', name: 'هاني الرفاعي', englishName: 'Hani Ar-Rifai' },
+  { identifier: 'ar.husarymuallem', name: 'الحصري المعلم', englishName: 'Al-Husary (Muallim)' },
+  { identifier: 'ar.abdullahbasfar', name: 'عبدالله بصفر', englishName: 'Abdullah Basfar' },
+  { identifier: 'ar.akramalaqqad', name: 'أكرم العلاقمي', englishName: 'Akram Al-Alaqmi' },
+  { identifier: 'ar.bandarbalilah', name: 'بندر بليلة', englishName: 'Bandar Balilah' },
+  { identifier: 'ar.ibrahimakhdar', name: 'إبراهيم الأخضر', englishName: 'Ibrahim Al-Akhdar' },
+  { identifier: 'ar.yaboromee', name: 'ياسر الدوسري', englishName: 'Yasser Al-Dosari' },
+  { identifier: 'ar.faboromee', name: 'فارس عباد', englishName: 'Fares Abbad' },
+  { identifier: 'ar.naboromee', name: 'ناصر القطامي', englishName: 'Nasser Al-Qatami' },
+  { identifier: 'ar.khalifaa', name: 'خليفة الطنيجي', englishName: 'Khalifah Al-Tunaiji' },
+  { identifier: 'ar.aliabdullah', name: 'علي جابر', englishName: 'Ali Jaber' },
+  { identifier: 'ar.saboromee', name: 'صلاح بو خاطر', englishName: 'Salah Bukhatir' },
+  { identifier: 'ar.tababoromee', name: 'سلمان العتيبي', englishName: 'Salman Al-Utaybi' },
+  { identifier: 'ar.aymanswoaid', name: 'أيمن سويد', englishName: 'Ayman Sowaid' },
+  { identifier: 'ar.abdulbari', name: 'عبدالباري الثبيتي', englishName: 'Abdul Bari Ath-Thubaity' },
 ];
 
 export const TRANSLATIONS: { identifier: string; language: string; name: string }[] = [
+  // English Translations
   { identifier: 'en.sahih', language: 'English', name: 'Sahih International' },
   { identifier: 'en.pickthall', language: 'English', name: 'Pickthall' },
+  { identifier: 'en.yusufali', language: 'English', name: 'Yusuf Ali' },
+  { identifier: 'en.asad', language: 'English', name: 'Muhammad Asad' },
+  { identifier: 'en.daryabadi', language: 'English', name: 'Daryabadi' },
+  { identifier: 'en.hilali', language: 'English', name: 'Hilali & Khan' },
+  { identifier: 'en.itani', language: 'English', name: 'Talal Itani' },
+  { identifier: 'en.sarwar', language: 'English', name: 'Muhammad Sarwar' },
+  { identifier: 'en.wahiduddin', language: 'English', name: 'Wahiduddin Khan' },
+  { identifier: 'en.transliteration', language: 'English', name: 'Transliteration' },
+  // Urdu Translations
   { identifier: 'ur.jalandhry', language: 'Urdu', name: 'Fateh Muhammad Jalandhry' },
+  { identifier: 'ur.ahmedali', language: 'Urdu', name: 'Ahmed Ali' },
+  { identifier: 'ur.junagarhi', language: 'Urdu', name: 'Muhammad Junagarhi' },
+  { identifier: 'ur.maududi', language: 'Urdu', name: 'Abul Ala Maududi' },
+  { identifier: 'ur.qadri', language: 'Urdu', name: 'Tahir ul Qadri' },
+  // Hindi Translations
   { identifier: 'hi.hindi', language: 'Hindi', name: 'Hindi Translation' },
+  { identifier: 'hi.farooq', language: 'Hindi', name: 'Muhammad Farooq Khan' },
+  // Bengali Translations
   { identifier: 'bn.bengali', language: 'Bengali', name: 'Muhiuddin Khan' },
+  { identifier: 'bn.hoque', language: 'Bengali', name: 'Zohurul Hoque' },
+  // Arabic Tafsir
+  { identifier: 'ar.muyassar', language: 'Arabic', name: 'King Fahad Quran Complex' },
+  { identifier: 'ar.jalalayn', language: 'Arabic', name: 'Tafsir al-Jalalayn' },
+  // Turkish Translations
   { identifier: 'tr.diyanet', language: 'Turkish', name: 'Diyanet İşleri' },
+  { identifier: 'tr.yazir', language: 'Turkish', name: 'Elmalılı Hamdi Yazır' },
+  { identifier: 'tr.ozturk', language: 'Turkish', name: 'Yaşar Nuri Öztürk' },
+  { identifier: 'tr.golpinarli', language: 'Turkish', name: 'Abdulbaki Gölpınarlı' },
+  { identifier: 'tr.ates', language: 'Turkish', name: 'Süleyman Ateş' },
+  // Indonesian/Malay Translations
   { identifier: 'id.indonesian', language: 'Indonesian', name: 'Indonesian Ministry' },
+  { identifier: 'id.muntakhab', language: 'Indonesian', name: 'Quraish Shihab' },
   { identifier: 'ms.basmeih', language: 'Malay', name: 'Abdullah Muhammad Basmeih' },
+  // French Translations
   { identifier: 'fr.hamidullah', language: 'French', name: 'Muhammad Hamidullah' },
+  { identifier: 'fr.montada', language: 'French', name: 'Montada Islamic Foundation' },
+  // German Translations
   { identifier: 'de.bubenheim', language: 'German', name: 'Bubenheim & Elyas' },
+  { identifier: 'de.aburida', language: 'German', name: 'Abu Rida' },
+  { identifier: 'de.khoury', language: 'German', name: 'Adel Theodor Khoury' },
+  { identifier: 'de.zaidan', language: 'German', name: 'Amir Zaidan' },
+  // Spanish Translations
   { identifier: 'es.cortes', language: 'Spanish', name: 'Julio Cortes' },
+  { identifier: 'es.asad', language: 'Spanish', name: 'Muhammad Asad (Spanish)' },
+  { identifier: 'es.bornez', language: 'Spanish', name: 'Raúl González Bórnez' },
+  // Portuguese Translations
+  { identifier: 'pt.elhayek', language: 'Portuguese', name: 'Samir El-Hayek' },
+  { identifier: 'pt.nasr', language: 'Portuguese', name: 'Helmi Nasr' },
+  // Persian/Farsi Translations
   { identifier: 'fa.makarem', language: 'Persian', name: 'Ayatollah Makarem Shirazi' },
+  { identifier: 'fa.ansarian', language: 'Persian', name: 'Hussain Ansarian' },
+  { identifier: 'fa.ayati', language: 'Persian', name: 'Abolqasem Ayati' },
+  { identifier: 'fa.fooladvand', language: 'Persian', name: 'Mohammad Mahdi Fooladvand' },
+  { identifier: 'fa.ghomshei', language: 'Persian', name: 'Elahi Ghomshei' },
+  // Russian Translations
   { identifier: 'ru.kuliev', language: 'Russian', name: 'Elmir Kuliev' },
+  { identifier: 'ru.osmanov', language: 'Russian', name: 'Magomed-Nuri Osmanov' },
+  { identifier: 'ru.krachkovsky', language: 'Russian', name: 'Ignaty Krachkovsky' },
+  { identifier: 'ru.abuadel', language: 'Russian', name: 'Abu Adel' },
+  // Chinese Translations
   { identifier: 'zh.majian', language: 'Chinese', name: 'Ma Jian' },
+  { identifier: 'zh.jian', language: 'Chinese', name: 'Ma Jian (Traditional)' },
+  // Japanese Translation
+  { identifier: 'ja.japanese', language: 'Japanese', name: 'Japanese Translation' },
+  // Korean Translation
+  { identifier: 'ko.korean', language: 'Korean', name: 'Korean Translation' },
+  // Italian Translations
+  { identifier: 'it.piccardo', language: 'Italian', name: 'Hamza Piccardo' },
+  // Dutch Translation
+  { identifier: 'nl.keyzer', language: 'Dutch', name: 'Salomo Keyzer' },
+  { identifier: 'nl.siregar', language: 'Dutch', name: 'Sofian Siregar' },
+  // Swedish Translation
+  { identifier: 'sv.bernstrom', language: 'Swedish', name: 'Knut Bernström' },
+  // Norwegian Translation
+  { identifier: 'no.berg', language: 'Norwegian', name: 'Einar Berg' },
+  // Polish Translation
+  { identifier: 'pl.bielawskiego', language: 'Polish', name: 'Józef Bielawski' },
+  // Czech Translation
+  { identifier: 'cs.hrbek', language: 'Czech', name: 'Ivan Hrbek' },
+  { identifier: 'cs.nykl', language: 'Czech', name: 'A.R. Nykl' },
+  // Albanian Translation
+  { identifier: 'sq.ahmeti', language: 'Albanian', name: 'Sherif Ahmeti' },
+  { identifier: 'sq.mehdiu', language: 'Albanian', name: 'Feti Mehdiu' },
+  // Bosnian Translation
+  { identifier: 'bs.korkut', language: 'Bosnian', name: 'Besim Korkut' },
+  { identifier: 'bs.mlivo', language: 'Bosnian', name: 'Mustafa Mlivo' },
+  // Azerbaijani Translation
+  { identifier: 'az.mammadaliyev', language: 'Azerbaijani', name: 'Vasim Mammadaliyev' },
+  { identifier: 'az.musayev', language: 'Azerbaijani', name: 'Alikhan Musayev' },
+  // Tamil Translation
+  { identifier: 'ta.tamil', language: 'Tamil', name: 'Tamil Translation' },
+  // Malayalam Translation
+  { identifier: 'ml.abdulhameed', language: 'Malayalam', name: 'Abdul Hameed & Kunhi' },
+  { identifier: 'ml.karakunnu', language: 'Malayalam', name: 'Cheriyamundam Abdul Hameed' },
+  // Telugu Translation
+  { identifier: 'te.maulana', language: 'Telugu', name: 'Maulana Abul Aala Maududi' },
+  // Swahili Translation
+  { identifier: 'sw.barwani', language: 'Swahili', name: 'Ali Muhsin Al-Barwani' },
+  // Hausa Translation
+  { identifier: 'ha.gumi', language: 'Hausa', name: 'Abubakar Mahmud Gumi' },
+  // Somali Translation
+  { identifier: 'so.abduh', language: 'Somali', name: 'Mahmud Muhammad Abduh' },
+  // Amharic Translation
+  { identifier: 'am.sadiq', language: 'Amharic', name: 'Sadiq & Sani' },
+  // Thai Translation
+  { identifier: 'th.thai', language: 'Thai', name: 'Thai Translation' },
+  // Vietnamese Translation
+  { identifier: 'vi.khang', language: 'Vietnamese', name: 'Hassan Abdulkarim' },
+  // Uzbek Translation
+  { identifier: 'uz.sodik', language: 'Uzbek', name: 'Muhammad Sodik' },
+  // Kazakh Translation
+  { identifier: 'kk.altai', language: 'Kazakh', name: 'Khalifa Altai' },
+  // Tajik Translation
+  { identifier: 'tg.ayati', language: 'Tajik', name: 'Tajik Translation' },
+  // Kurdish Translation
+  { identifier: 'ku.asan', language: 'Kurdish', name: 'Burhan Muhammad-Amin' },
+  // Sindhi Translation
+  { identifier: 'sd.amroti', language: 'Sindhi', name: 'Taj Mehmood Amroti' },
+  // Pashto Translation
+  { identifier: 'ps.abdulwali', language: 'Pashto', name: 'Abdul Wali Khan' },
+  // Uyghur Translation
+  { identifier: 'ug.saleh', language: 'Uyghur', name: 'Muhammad Saleh' },
+  // Romanian Translation
+  { identifier: 'ro.grigore', language: 'Romanian', name: 'George Grigore' },
+  // Bulgarian Translation
+  { identifier: 'bg.theophanov', language: 'Bulgarian', name: 'Tzvetan Theophanov' },
+  // Divehi/Maldivian Translation
+  { identifier: 'dv.divehi', language: 'Divehi', name: 'Office of the President of Maldives' },
 ];
 
 export const SPEED_PRESETS = [
