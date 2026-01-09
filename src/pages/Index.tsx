@@ -53,6 +53,9 @@ export default function Index() {
       <main className="container px-4 py-8">
         {/* Hero Section */}
         <section className="text-center mb-16 pt-8 animate-fade-in">
+          <p className="bismillah text-2xl md:text-3xl mb-6">
+            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+          </p>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
             <Sparkles className="h-4 w-4" />
             Your Digital Quran Companion
@@ -120,11 +123,11 @@ export default function Index() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Audio Player */}
             <HomeAudioPlayer />
             
-            {/* Physical Quran Reader - 16 Ayahs per page */}
+            {/* Physical Quran Reader - 16 Ayahs per page with independent scroll */}
             <PhysicalQuranReader />
           </div>
         </section>
@@ -139,7 +142,7 @@ export default function Index() {
               Track your progress, maintain streaks, and unlock achievements
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ReadingStreakCard />
             <ReadingGoalsCard />
             <AchievementsCard />
@@ -257,10 +260,10 @@ export default function Index() {
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center">
             <p className="bismillah text-2xl md:text-3xl mb-4">
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+              الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ
             </p>
             <p className="text-muted-foreground mb-6">
-              In the name of Allah, the Most Gracious, the Most Merciful
+              All praise is due to Allah, Lord of all the worlds
             </p>
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground mb-6">
               <Link to="/surah" className="hover:text-primary transition-colors">All Surahs</Link>

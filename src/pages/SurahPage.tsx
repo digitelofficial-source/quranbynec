@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Play, Book, Layers, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Book, Layers, GraduationCap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import Header from '@/components/layout/Header';
 import AyahDisplay from '@/components/quran/AyahDisplay';
 import AudioPlayer from '@/components/quran/AudioPlayer';
+import HifzModePanel from '@/components/quran/HifzModePanel';
 import { fetchSurahWithTranslation, getAyahAudioUrl } from '@/lib/quran-api';
 import { useQuran } from '@/context/QuranContext';
 import { Surah, AyahWithTranslation } from '@/types/quran';
@@ -26,6 +27,7 @@ export default function SurahPage() {
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
   const [currentAyah, setCurrentAyah] = useState(1);
   const [memorizationMode, setMemorizationMode] = useState(false);
+  const [showHifzPanel, setShowHifzPanel] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,6 +97,12 @@ export default function SurahPage() {
       setCurrentAyah(1);
       setShowAudioPlayer(true);
     }
+  };
+
+  // Toggle Hifz panel with memorization mode
+  const handleMemorizationToggle = (checked: boolean) => {
+    setMemorizationMode(checked);
+    setShowHifzPanel(checked);
   };
 
   // Bismillah for all surahs except At-Tawbah (9)
@@ -174,9 +182,32 @@ export default function SurahPage() {
               <Switch
                 id="memorization"
                 checked={memorizationMode}
-                onCheckedChange={setMemorizationMode}
+                onCheckedChange={handleMemorizationToggle}
               />
             </div>
+
+            {/* Hifz Mode Panel */}
+            {showHifzPanel && (
+              <div className="mb-6 relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 z-10 h-8 w-8"
+                  onClick={() => {
+                    setShowHifzPanel(false);
+                    setMemorizationMode(false);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <HifzModePanel
+                  ayahs={ayahs}
+                  surahNumber={surahNumber}
+                  currentAyah={currentAyah}
+                  onAyahChange={handleAyahChange}
+                />
+              </div>
+            )}
 
             {/* Bismillah */}
             {showBismillah && (

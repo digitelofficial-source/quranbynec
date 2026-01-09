@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Book, Play, Pause, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Book, Play, Pause, Volume2, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuran } from '@/context/QuranContext';
 import { fetchSurahWithTranslation, getAyahAudioUrl } from '@/lib/quran-api';
 import { AyahWithTranslation, Surah, RECITERS } from '@/types/quran';
@@ -20,6 +21,7 @@ export default function PhysicalQuranReader() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlayingAyah, setCurrentPlayingAyah] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.ceil(ayahs.length / AYAHS_PER_PAGE);
   const startIndex = (currentPage - 1) * AYAHS_PER_PAGE;
@@ -42,39 +44,86 @@ export default function PhysicalQuranReader() {
     loadSurah();
   }, [selectedSurah, settings.selectedTranslation]);
 
-  // Audio setup
+  // Audio setup - create audio element once
   useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
     
-    audio.onended = () => {
-      // Play next ayah on current page
-      if (currentPlayingAyah !== null) {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, []);
+
+  // Audio event handlers
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      if (currentPlayingAyah !== null && pageAyahs.length > 0) {
         const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
         if (currentIndex < pageAyahs.length - 1) {
-          playAyah(pageAyahs[currentIndex + 1].numberInSurah);
+          // Play next ayah on current page
+          const nextAyah = pageAyahs[currentIndex + 1];
+          playAyah(nextAyah.numberInSurah);
         } else {
+          // End of page
           setIsPlaying(false);
           setCurrentPlayingAyah(null);
         }
       }
     };
-    audio.onplay = () => setIsPlaying(true);
-    audio.onpause = () => setIsPlaying(false);
-    
-    return () => {
-      audio.pause();
-      audio.src = '';
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleError = (e: Event) => {
+      console.error('Audio error:', e);
+      setIsPlaying(false);
     };
-  }, [pageAyahs, currentPlayingAyah]);
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+    };
+  }, [currentPlayingAyah, pageAyahs]);
 
   const playAyah = useCallback((ayahNum: number) => {
     if (!audioRef.current) return;
+    
+    const audio = audioRef.current;
     const url = getAyahAudioUrl(selectedSurah, ayahNum, settings.selectedReciter);
-    audioRef.current.src = url;
-    audioRef.current.play().catch(console.error);
-    setCurrentPlayingAyah(ayahNum);
-    recordAyahRead();
+    
+    // Stop current audio if playing
+    audio.pause();
+    audio.currentTime = 0;
+    
+    // Set new source and play
+    audio.src = url;
+    audio.load();
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setCurrentPlayingAyah(ayahNum);
+          recordAyahRead();
+        })
+        .catch((error) => {
+          console.error('Playback failed:', error);
+          setIsPlaying(false);
+        });
+    }
   }, [selectedSurah, settings.selectedReciter, recordAyahRead]);
 
   const togglePlayPage = () => {
@@ -82,19 +131,40 @@ export default function PhysicalQuranReader() {
     
     if (isPlaying) {
       audioRef.current.pause();
-      setCurrentPlayingAyah(null);
+      setIsPlaying(false);
     } else if (pageAyahs.length > 0) {
       playAyah(pageAyahs[0].numberInSurah);
+    }
+  };
+
+  const playPreviousAyah = () => {
+    if (!currentPlayingAyah || pageAyahs.length === 0) return;
+    const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
+    if (currentIndex > 0) {
+      playAyah(pageAyahs[currentIndex - 1].numberInSurah);
+    }
+  };
+
+  const playNextAyah = () => {
+    if (!currentPlayingAyah || pageAyahs.length === 0) return;
+    const currentIndex = pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah);
+    if (currentIndex < pageAyahs.length - 1) {
+      playAyah(pageAyahs[currentIndex + 1].numberInSurah);
     }
   };
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      if (isPlaying) {
-        audioRef.current?.pause();
+      if (audioRef.current && isPlaying) {
+        audioRef.current.pause();
         setIsPlaying(false);
         setCurrentPlayingAyah(null);
+      }
+      // Scroll to top of scroll area
+      if (scrollAreaRef.current) {
+        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) viewport.scrollTop = 0;
       }
     }
   };
@@ -103,9 +173,9 @@ export default function PhysicalQuranReader() {
   const showBismillah = selectedSurah !== 9 && selectedSurah !== 1 && currentPage === 1;
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-50 via-card to-amber-100/50 dark:from-amber-900/20 dark:via-card dark:to-amber-800/20 border border-amber-200/50 dark:border-amber-800/30">
+    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-50 via-card to-amber-100/50 dark:from-amber-900/20 dark:via-card dark:to-amber-800/20 border border-amber-200/50 dark:border-amber-800/30 flex flex-col h-[700px]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-amber-200/50 dark:border-amber-800/30 bg-amber-100/30 dark:bg-amber-900/20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-amber-200/50 dark:border-amber-800/30 bg-amber-100/30 dark:bg-amber-900/20 shrink-0">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center">
             <Book className="h-5 w-5 text-amber-700 dark:text-amber-400" />
@@ -148,77 +218,120 @@ export default function PhysicalQuranReader() {
         </div>
       </div>
 
-      {/* Surah Title */}
-      {surah && currentPage === 1 && (
-        <div className="text-center py-4 border-b border-amber-200/30 dark:border-amber-800/20">
-          <h2 className="font-arabic text-3xl text-primary">{surah.name}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{surah.englishName} - {surah.englishNameTranslation}</p>
-        </div>
-      )}
+      {/* Scrollable Content Area */}
+      <ScrollArea ref={scrollAreaRef} className="flex-1">
+        <div className="p-4 sm:p-6">
+          {/* Surah Title */}
+          {surah && currentPage === 1 && (
+            <div className="text-center py-4 border-b border-amber-200/30 dark:border-amber-800/20 mb-4">
+              <h2 className="font-arabic text-3xl text-primary">{surah.name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{surah.englishName} - {surah.englishNameTranslation}</p>
+            </div>
+          )}
 
-      {/* Bismillah */}
-      {showBismillah && (
-        <div className="text-center py-4">
-          <p className="bismillah text-2xl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-        </div>
-      )}
+          {/* Bismillah */}
+          {showBismillah && (
+            <div className="text-center py-4 mb-4">
+              <p className="bismillah text-2xl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+            </div>
+          )}
 
-      {/* Page Content */}
-      <div className="p-4 sm:p-6 min-h-[500px]">
-        {isLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {pageAyahs.map((ayah) => (
-              <div
-                key={ayah.numberInSurah}
-                className={`group relative p-3 rounded-lg transition-all cursor-pointer
-                  ${currentPlayingAyah === ayah.numberInSurah 
-                    ? 'bg-amber-200/50 dark:bg-amber-800/30' 
-                    : 'hover:bg-amber-100/50 dark:hover:bg-amber-900/20'
-                  }
-                `}
-                onClick={() => playAyah(ayah.numberInSurah)}
-              >
-                <div className="flex items-start gap-3" dir="rtl">
-                  <p 
-                    className="font-quran leading-[2] flex-1 text-foreground"
-                    style={{ fontSize: `${settings.arabicFontSize}px` }}
-                  >
-                    {ayah.text}
-                    <span className="inline-flex items-center justify-center mx-2 text-sm font-medium text-amber-700 dark:text-amber-400">
-                      ﴿{ayah.numberInSurah.toLocaleString('ar-EG')}﴾
-                    </span>
-                  </p>
-                </div>
-                
-                {settings.showTranslation && ayah.translation && (
-                  <p 
-                    className="mt-2 text-muted-foreground leading-relaxed"
-                    style={{ fontSize: `${settings.translationFontSize - 2}px` }}
-                  >
-                    {ayah.translation}
-                  </p>
-                )}
-
-                {/* Play indicator */}
-                {currentPlayingAyah === ayah.numberInSurah && (
-                  <div className="absolute left-2 top-1/2 -translate-y-1/2">
-                    <Volume2 className="h-4 w-4 text-amber-600 animate-pulse" />
+          {/* Page Content */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {pageAyahs.map((ayah) => (
+                <div
+                  key={ayah.numberInSurah}
+                  className={`group relative p-3 rounded-lg transition-all cursor-pointer
+                    ${currentPlayingAyah === ayah.numberInSurah 
+                      ? 'bg-amber-200/50 dark:bg-amber-800/30' 
+                      : 'hover:bg-amber-100/50 dark:hover:bg-amber-900/20'
+                    }
+                  `}
+                  onClick={() => playAyah(ayah.numberInSurah)}
+                >
+                  <div className="flex items-start gap-3" dir="rtl">
+                    <p 
+                      className="font-quran leading-[2] flex-1 text-foreground"
+                      style={{ fontSize: `${settings.arabicFontSize}px` }}
+                    >
+                      {ayah.text}
+                      <span className="inline-flex items-center justify-center mx-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+                        ﴿{ayah.numberInSurah.toLocaleString('ar-EG')}﴾
+                      </span>
+                    </p>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  
+                  {settings.showTranslation && ayah.translation && (
+                    <p 
+                      className="mt-2 text-muted-foreground leading-relaxed"
+                      style={{ fontSize: `${settings.translationFontSize - 2}px` }}
+                    >
+                      {ayah.translation}
+                    </p>
+                  )}
+
+                  {/* Play indicator */}
+                  {currentPlayingAyah === ayah.numberInSurah && (
+                    <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                      <Volume2 className="h-4 w-4 text-amber-600 animate-pulse" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Fixed Audio Controls */}
+      <div className="p-4 border-t border-amber-200/50 dark:border-amber-800/30 bg-amber-100/30 dark:bg-amber-900/20 shrink-0">
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10"
+            onClick={playPreviousAyah}
+            disabled={!currentPlayingAyah || pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah) <= 0}
+          >
+            <SkipBack className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="default"
+            size="icon"
+            className="h-12 w-12 rounded-full bg-amber-600 hover:bg-amber-700"
+            onClick={togglePlayPage}
+          >
+            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10"
+            onClick={playNextAyah}
+            disabled={!currentPlayingAyah || pageAyahs.findIndex(a => a.numberInSurah === currentPlayingAyah) >= pageAyahs.length - 1}
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {currentPlayingAyah && (
+          <p className="text-xs text-center text-muted-foreground mb-2">
+            Now Playing: Ayah {currentPlayingAyah}
+          </p>
         )}
       </div>
 
-      {/* Footer Controls */}
-      <div className="flex items-center justify-between p-4 border-t border-amber-200/50 dark:border-amber-800/30 bg-amber-100/30 dark:bg-amber-900/20">
+      {/* Page Navigation */}
+      <div className="flex items-center justify-between p-3 border-t border-amber-200/30 dark:border-amber-800/20 bg-amber-50/50 dark:bg-amber-950/30 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -228,38 +341,8 @@ export default function PhysicalQuranReader() {
           <ChevronLeft className="h-5 w-5" />
         </Button>
 
-        <div className="flex items-center gap-4">
-          <Button
-            variant="default"
-            size="icon"
-            className="h-12 w-12 rounded-full bg-amber-600 hover:bg-amber-700"
-            onClick={togglePlayPage}
-          >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-          </Button>
-          
-          <div className="text-center">
-            <p className="text-sm font-medium">Page {currentPage} of {totalPages}</p>
-            <p className="text-xs text-muted-foreground">
-              Ayahs {startIndex + 1}-{Math.min(startIndex + AYAHS_PER_PAGE, ayahs.length)}
-            </p>
-          </div>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Quick Page Jump */}
-      <div className="p-3 border-t border-amber-200/30 dark:border-amber-800/20 bg-amber-50/50 dark:bg-amber-950/30">
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map(page => (
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map(page => (
             <Button
               key={page}
               variant={currentPage === page ? "default" : "outline"}
@@ -270,7 +353,7 @@ export default function PhysicalQuranReader() {
               {page}
             </Button>
           ))}
-          {totalPages > 10 && (
+          {totalPages > 8 && (
             <Link to={`/surah/${selectedSurah}`}>
               <Button variant="outline" size="sm" className="h-8">
                 View All
@@ -278,6 +361,15 @@ export default function PhysicalQuranReader() {
             </Link>
           )}
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
     </div>
   );
