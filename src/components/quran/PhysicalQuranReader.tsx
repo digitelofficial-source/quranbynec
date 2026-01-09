@@ -60,10 +60,30 @@ export default function PhysicalQuranReader() {
     setAudioError(null);
   }, [selectedSurah]);
 
+  // When reciter changes globally, reset effective reciter and reload audio immediately
   useEffect(() => {
+    const prevReciter = effectiveReciterRef.current;
     effectiveReciterRef.current = settings.selectedReciter;
     setAudioError(null);
-  }, [settings.selectedReciter]);
+
+    // If reciter actually changed and we have a playing ayah, reload the audio
+    if (prevReciter !== settings.selectedReciter && audioRef.current && currentPlayingAyahRef.current != null) {
+      const url = getAyahAudioUrl(selectedSurahRef.current, currentPlayingAyahRef.current, settings.selectedReciter);
+      audioRef.current.src = url;
+      audioRef.current.load();
+
+      // If was playing, continue playing with new reciter
+      if (wasPlayingRef.current || isPlaying) {
+        wasPlayingRef.current = true;
+        audioRef.current.play().catch((err) => {
+          console.error('Playback error:', err);
+          setAudioError('Playback failed. Click play to try again.');
+          wasPlayingRef.current = false;
+          setIsPlaying(false);
+        });
+      }
+    }
+  }, [settings.selectedReciter, isPlaying]);
 
   useEffect(() => {
     async function loadSurah() {
