@@ -36,6 +36,9 @@ export default function HomeAudioPlayer() {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [continuousPlay, setContinuousPlay] = useState(true); // Auto-continue to next surah
 
+  // Track if we were playing before a reciter change
+  const wasPlayingRef = useRef(false);
+
   // Initialize audio element and preloader
   useEffect(() => {
     const audio = new Audio();
@@ -54,7 +57,6 @@ export default function HomeAudioPlayer() {
       setIsLoading(false);
       setAudioError(null);
     };
-    const handleEnded = () => handleAudioEnded();
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleError = () => {
@@ -88,7 +90,6 @@ export default function HomeAudioPlayer() {
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('error', handleError);
@@ -97,7 +98,6 @@ export default function HomeAudioPlayer() {
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
@@ -106,7 +106,7 @@ export default function HomeAudioPlayer() {
       audio.src = '';
       preload.src = '';
     };
-  }, [handleAudioEnded, currentAyah, selectedSurah, settings.selectedReciter]);
+  }, [currentAyah, selectedSurah, settings.selectedReciter]);
 
   // Load surah info when selected surah changes
   useEffect(() => {
@@ -122,9 +122,6 @@ export default function HomeAudioPlayer() {
     }
     loadSurahInfo();
   }, [selectedSurah]);
-
-  // Track if we were playing before a reciter change
-  const wasPlayingRef = useRef(false);
 
   // Load audio when ayah or reciter changes
   useEffect(() => {
