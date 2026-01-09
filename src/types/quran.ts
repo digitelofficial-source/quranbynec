@@ -140,7 +140,7 @@ export interface DailyStats {
 }
 
 export const RECITERS: Reciter[] = [
-  // Verse-by-verse audio editions known to be available via AlQuran Cloud / Islamic Network CDN
+  // Curated verse-by-verse reciters (kept intentionally small to avoid broken audio editions)
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Alafasy' },
   { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Samad' },
   { identifier: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', englishName: 'Abdurrahmaan As-Sudais' },
@@ -154,11 +154,6 @@ export const RECITERS: Reciter[] = [
   { identifier: 'ar.muhammadayyoub', name: 'محمد أيوب', englishName: 'Muhammad Ayyub' },
   { identifier: 'ar.muhammadjibreel', name: 'محمد جبريل', englishName: 'Muhammad Jibreel' },
   { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Minshawi' },
-  { identifier: 'ar.parhizgar', name: 'شهريار پرهیزگار', englishName: 'Parhizgar' },
-  { identifier: 'ar.aymanswoaid', name: 'أيمن سويد', englishName: 'Ayman Sowaid' },
-  { identifier: 'ar.abdullahbasfar', name: 'عبد الله بصفر', englishName: 'Abdullah Basfar' },
-  { identifier: 'ar.hanirifai', name: 'هاني الرفاعي', englishName: 'Hani Rifai' },
-  { identifier: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', englishName: 'Ibrahim Akhdar' },
 ];
 
 export const TRANSLATIONS: { identifier: string; language: string; name: string }[] = [
