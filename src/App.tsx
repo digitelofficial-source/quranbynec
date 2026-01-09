@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QuranProvider } from "@/context/QuranContext";
 import Index from "./pages/Index";
 import SurahPage from "./pages/SurahPage";
 import SurahListPage from "./pages/SurahListPage";
@@ -37,25 +36,24 @@ function ThemeInitializer() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <QuranProvider>
-      <TooltipProvider>
-        <ThemeInitializer />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/surah" element={<SurahListPage />} />
-            <Route path="/surah/:number" element={<SurahPage />} />
-            <Route path="/juz" element={<JuzListPage />} />
-            <Route path="/juz/:number" element={<JuzPage />} />
-            <Route path="/bookmarks" element={<BookmarksPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QuranProvider>
+    <TooltipProvider>
+      <ThemeInitializer />
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/surah" element={<SurahListPage />} />
+          <Route path="/surah/:number" element={<SurahPage />} />
+          <Route path="/juz" element={<JuzListPage />} />
+          <Route path="/juz/:number" element={<JuzPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
