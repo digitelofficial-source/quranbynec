@@ -43,7 +43,9 @@ export default function AudioPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
   const [error, setError] = useState<string | null>(null);
-
+  
+  // Track if we were playing before a change (reciter/ayah)
+  const wasPlayingRef = useRef(false);
   // Get current reciter name
   const currentReciter = RECITERS.find(r => r.identifier === settings.selectedReciter);
 
@@ -69,9 +71,13 @@ export default function AudioPlayer({
       setError('Audio failed to load');
       setIsPlaying(false);
     };
-    const handleCanPlay = () => {
+    const handleCanPlayThrough = () => {
       setIsLoading(false);
       setError(null);
+      // Auto-resume if we were playing
+      if (wasPlayingRef.current) {
+        audio.play().catch(console.error);
+      }
     };
     const handleWaiting = () => setIsLoading(true);
 
@@ -80,7 +86,7 @@ export default function AudioPlayer({
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('error', handleError);
-    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('waiting', handleWaiting);
 
     return () => {
@@ -89,7 +95,7 @@ export default function AudioPlayer({
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
-      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.removeEventListener('waiting', handleWaiting);
       audio.pause();
       audio.src = '';
@@ -99,6 +105,7 @@ export default function AudioPlayer({
   // Load audio when ayah or reciter changes
   useEffect(() => {
     if (audioRef.current) {
+      wasPlayingRef.current = isPlaying;
       loadAudio(currentAyah);
     }
   }, [currentAyah, settings.selectedReciter, surahNumber]);
@@ -137,15 +144,15 @@ export default function AudioPlayer({
     }
 
     if (currentAyah < totalAyahs) {
-      const nextAyah = currentAyah + 1;
-      onAyahChange(nextAyah);
-      loadAudio(nextAyah);
-      audio.play().catch(console.error);
+      wasPlayingRef.current = true; // Keep playing for next ayah
+      onAyahChange(currentAyah + 1);
+      // loadAudio will be triggered by useEffect, canplaythrough will auto-play
       return;
     }
 
+    wasPlayingRef.current = false;
     setIsPlaying(false);
-  }, [isRepeat, currentAyah, totalAyahs, onAyahChange, loadAudio]);
+  }, [isRepeat, currentAyah, totalAyahs, onAyahChange]);
 
   // Attach ended handler
   useEffect(() => {
@@ -159,8 +166,10 @@ export default function AudioPlayer({
     setError(null);
     
     if (isPlaying) {
+      wasPlayingRef.current = false;
       audioRef.current.pause();
     } else {
+      wasPlayingRef.current = true;
       setIsLoading(true);
       audioRef.current.play()
         .then(() => setIsLoading(false))
@@ -168,37 +177,22 @@ export default function AudioPlayer({
           console.error('Playback error:', err);
           setError('Playback failed. Try again.');
           setIsLoading(false);
+          wasPlayingRef.current = false;
         });
     }
   };
 
   const playPrevious = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (currentAyah > 1) {
-      const prevAyah = currentAyah - 1;
-      onAyahChange(prevAyah);
-      loadAudio(prevAyah);
-      audio.play().catch((err) => {
-        console.error('Playback error:', err);
-        setError('Playback failed. Try again.');
-      });
+      wasPlayingRef.current = true;
+      onAyahChange(currentAyah - 1);
     }
   };
 
   const playNext = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (currentAyah < totalAyahs) {
-      const nextAyah = currentAyah + 1;
-      onAyahChange(nextAyah);
-      loadAudio(nextAyah);
-      audio.play().catch((err) => {
-        console.error('Playback error:', err);
-        setError('Playback failed. Try again.');
-      });
+      wasPlayingRef.current = true;
+      onAyahChange(currentAyah + 1);
     }
   };
 

@@ -54,9 +54,13 @@ export default function HomeAudioPlayer() {
       setAudioError('Audio failed to load. Please try again.');
       setIsPlaying(false);
     };
-    const handleCanPlay = () => {
+    const handleCanPlayThrough = () => {
       setIsLoading(false);
       setAudioError(null);
+      // Auto-resume if we were playing (e.g., after reciter change or next ayah)
+      if (wasPlayingRef.current) {
+        audio.play().catch(console.error);
+      }
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -65,7 +69,7 @@ export default function HomeAudioPlayer() {
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('error', handleError);
-    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -74,7 +78,7 @@ export default function HomeAudioPlayer() {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
-      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.pause();
       audio.src = '';
     };
@@ -95,9 +99,14 @@ export default function HomeAudioPlayer() {
     loadSurahInfo();
   }, [selectedSurah]);
 
+  // Track if we were playing before a reciter change
+  const wasPlayingRef = useRef(false);
+
   // Load audio when ayah or reciter changes
   useEffect(() => {
     if (audioRef.current && surahInfo) {
+      // Remember if we were playing
+      wasPlayingRef.current = isPlaying;
       loadAudio(currentAyah);
     }
   }, [currentAyah, settings.selectedReciter, surahInfo]);
@@ -135,15 +144,15 @@ export default function HomeAudioPlayer() {
     }
 
     if (currentAyah < totalAyahs) {
-      const nextAyah = currentAyah + 1;
-      setCurrentAyah(nextAyah);
-      loadAudio(nextAyah);
-      audio.play().catch(console.error);
+      wasPlayingRef.current = true; // Keep playing for next ayah
+      setCurrentAyah(currentAyah + 1);
+      // loadAudio will be called by the useEffect, and canplaythrough will auto-play
       return;
     }
 
+    wasPlayingRef.current = false;
     setIsPlaying(false);
-  }, [isRepeat, currentAyah, totalAyahs, loadAudio]);
+  }, [isRepeat, currentAyah, totalAyahs]);
 
   // Re-attach ended handler when dependencies change
   useEffect(() => {
@@ -159,6 +168,7 @@ export default function HomeAudioPlayer() {
     setAudioError(null);
 
     if (isPlaying) {
+      wasPlayingRef.current = false;
       audio.pause();
       return;
     }
@@ -168,6 +178,7 @@ export default function HomeAudioPlayer() {
       loadAudio(currentAyah);
     }
 
+    wasPlayingRef.current = true;
     setIsLoading(true);
     audio
       .play()
@@ -176,36 +187,21 @@ export default function HomeAudioPlayer() {
         console.error('Playback error:', err);
         setAudioError('Playback failed. Click play to try again.');
         setIsLoading(false);
+        wasPlayingRef.current = false;
       });
   };
 
   const playPrevious = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (currentAyah > 1) {
-      const prevAyah = currentAyah - 1;
-      setCurrentAyah(prevAyah);
-      loadAudio(prevAyah);
-      audio.play().catch((err) => {
-        console.error('Playback error:', err);
-        setAudioError('Playback failed. Click play to try again.');
-      });
+      wasPlayingRef.current = true;
+      setCurrentAyah(currentAyah - 1);
     }
   };
 
   const playNext = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (currentAyah < totalAyahs) {
-      const nextAyah = currentAyah + 1;
-      setCurrentAyah(nextAyah);
-      loadAudio(nextAyah);
-      audio.play().catch((err) => {
-        console.error('Playback error:', err);
-        setAudioError('Playback failed. Click play to try again.');
-      });
+      wasPlayingRef.current = true;
+      setCurrentAyah(currentAyah + 1);
     }
   };
 
