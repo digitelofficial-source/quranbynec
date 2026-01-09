@@ -105,7 +105,11 @@ export default function AudioPlayer({
   // Load audio when ayah or reciter changes
   useEffect(() => {
     if (audioRef.current) {
-      wasPlayingRef.current = isPlaying;
+      // Only update wasPlayingRef if we're not already in a "keep playing" state
+      // (e.g., when user changes reciter or ayah manually while playing)
+      if (!wasPlayingRef.current) {
+        wasPlayingRef.current = isPlaying;
+      }
       loadAudio(currentAyah);
     }
   }, [currentAyah, settings.selectedReciter, surahNumber]);
