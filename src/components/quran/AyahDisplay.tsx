@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { useQuran } from '@/context/QuranContext';
 import { AyahWithTranslation } from '@/types/quran';
 import { toast } from 'sonner';
+import NoteDialog from './NoteDialog';
+import ShareAyahCard from './ShareAyahCard';
+import TafsirDialog from './TafsirDialog';
 
 interface AyahDisplayProps {
   ayah: AyahWithTranslation;
@@ -145,6 +148,29 @@ function AyahDisplay({
         >
           <Share2 className="h-4 w-4" />
         </Button>
+
+        {/* Tafsir Dialog */}
+        <TafsirDialog
+          surahNumber={surahNumber}
+          ayahNumber={ayah.numberInSurah}
+          surahName={surahName}
+        />
+
+        {/* Note Dialog */}
+        <NoteDialog
+          surahNumber={surahNumber}
+          ayahNumber={ayah.numberInSurah}
+          surahName={surahName}
+        />
+
+        {/* Share Ayah Card */}
+        <ShareAyahCard
+          arabicText={ayah.text}
+          translation={ayah.translation}
+          surahName={surahName}
+          ayahNumber={ayah.numberInSurah}
+          surahNumber={surahNumber}
+        />
 
         <span className="text-xs text-muted-foreground ml-auto">
           {surahNumber}:{ayah.numberInSurah}
