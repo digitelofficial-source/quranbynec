@@ -19,6 +19,7 @@ import { RECITERS, Surah } from '@/types/quran';
 export default function HomeAudioPlayer() {
   const { settings, updateSettings } = useQuran();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRef = useRef<HTMLAudioElement | null>(null); // For preloading next ayah
   
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [surahInfo, setSurahInfo] = useState<Surah | null>(null);
@@ -33,12 +34,19 @@ export default function HomeAudioPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [continuousPlay, setContinuousPlay] = useState(true); // Auto-continue to next surah
 
-  // Initialize audio element
+  // Initialize audio element and preloader
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
     audioRef.current = audio;
+
+    // Create preload audio element for next ayah
+    const preload = new Audio();
+    preload.preload = 'auto';
+    preload.volume = 0; // Silent preload
+    preloadRef.current = preload;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => {
@@ -57,7 +65,7 @@ export default function HomeAudioPlayer() {
     const handleCanPlayThrough = () => {
       setIsLoading(false);
       setAudioError(null);
-      // Auto-resume if we were playing (e.g., after reciter change or next ayah)
+      // Auto-resume if we were playing
       if (wasPlayingRef.current) {
         audio.play().catch(console.error);
       }
@@ -81,6 +89,7 @@ export default function HomeAudioPlayer() {
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.pause();
       audio.src = '';
+      preload.src = '';
     };
   }, []);
 
@@ -127,13 +136,33 @@ export default function HomeAudioPlayer() {
     }
   }, [settings.playbackSpeed]);
 
-  const loadAudio = useCallback((ayahNum: number) => {
+  const loadAudio = useCallback((ayahNum: number, surahNum?: number) => {
     if (!audioRef.current) return;
     setIsLoading(true);
-    const url = getAyahAudioUrl(selectedSurah, ayahNum, settings.selectedReciter);
+    const surah = surahNum || selectedSurah;
+    const url = getAyahAudioUrl(surah, ayahNum, settings.selectedReciter);
     audioRef.current.src = url;
     audioRef.current.load();
   }, [selectedSurah, settings.selectedReciter]);
+
+  // Preload the next ayah for instant transitions
+  const preloadNextAyah = useCallback((nextAyahNum: number, nextSurahNum?: number) => {
+    if (!preloadRef.current) return;
+    const surah = nextSurahNum || selectedSurah;
+    const url = getAyahAudioUrl(surah, nextAyahNum, settings.selectedReciter);
+    preloadRef.current.src = url;
+    preloadRef.current.load();
+  }, [selectedSurah, settings.selectedReciter]);
+
+  // Preload next ayah when current one is playing
+  useEffect(() => {
+    if (isPlaying && currentAyah < totalAyahs) {
+      preloadNextAyah(currentAyah + 1);
+    } else if (isPlaying && currentAyah === totalAyahs && continuousPlay && selectedSurah < 114) {
+      // Preload first ayah of next surah
+      preloadNextAyah(1, selectedSurah + 1);
+    }
+  }, [isPlaying, currentAyah, totalAyahs, selectedSurah, continuousPlay, preloadNextAyah]);
 
   const handleAudioEnded = useCallback(() => {
     const audio = audioRef.current;
@@ -146,15 +175,23 @@ export default function HomeAudioPlayer() {
     }
 
     if (currentAyah < totalAyahs) {
-      wasPlayingRef.current = true; // Keep playing for next ayah
+      wasPlayingRef.current = true;
       setCurrentAyah(currentAyah + 1);
-      // loadAudio will be called by the useEffect, and canplaythrough will auto-play
+      return;
+    }
+
+    // End of surah - continue to next surah if enabled
+    if (continuousPlay && selectedSurah < 114) {
+      wasPlayingRef.current = true;
+      const nextSurah = selectedSurah + 1;
+      setSelectedSurah(nextSurah);
+      setCurrentAyah(1);
       return;
     }
 
     wasPlayingRef.current = false;
     setIsPlaying(false);
-  }, [isRepeat, currentAyah, totalAyahs]);
+  }, [isRepeat, currentAyah, totalAyahs, continuousPlay, selectedSurah]);
 
   // Re-attach ended handler when dependencies change
   useEffect(() => {

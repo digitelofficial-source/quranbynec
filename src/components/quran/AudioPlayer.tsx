@@ -23,6 +23,7 @@ interface AudioPlayerProps {
   onAyahChange: (ayahNumber: number) => void;
   surahName: string;
   onClose: () => void;
+  onNextSurah?: () => void; // Callback to navigate to next surah
 }
 
 export default function AudioPlayer({
@@ -32,9 +33,11 @@ export default function AudioPlayer({
   onAyahChange,
   surahName,
   onClose,
+  onNextSurah,
 }: AudioPlayerProps) {
   const { settings } = useQuran();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRef = useRef<HTMLAudioElement | null>(null); // For preloading next ayah
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -48,12 +51,18 @@ export default function AudioPlayer({
   const wasPlayingRef = useRef(false);
   // Get current reciter name
   const currentReciter = RECITERS.find(r => r.identifier === settings.selectedReciter);
-
-  // Initialize audio element
+  const [continuousPlay, setContinuousPlay] = useState(true); // Auto-continue to next surah
+  // Initialize audio element and preloader
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
     audioRef.current = audio;
+
+    // Create preload audio element for next ayah
+    const preload = new Audio();
+    preload.preload = 'auto';
+    preload.volume = 0; // Silent preload
+    preloadRef.current = preload;
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => {
@@ -99,6 +108,7 @@ export default function AudioPlayer({
       audio.removeEventListener('waiting', handleWaiting);
       audio.pause();
       audio.src = '';
+      preload.src = '';
     };
   }, []);
 
@@ -137,6 +147,24 @@ export default function AudioPlayer({
     audioRef.current.load();
   }, [surahNumber, settings.selectedReciter]);
 
+  // Preload the next ayah for instant transitions
+  const preloadNextAyah = useCallback((nextAyahNum: number, nextSurahNum?: number) => {
+    if (!preloadRef.current) return;
+    const surah = nextSurahNum || surahNumber;
+    const url = getAyahAudioUrl(surah, nextAyahNum, settings.selectedReciter);
+    preloadRef.current.src = url;
+    preloadRef.current.load();
+  }, [surahNumber, settings.selectedReciter]);
+
+  // Preload next ayah when current one is playing
+  useEffect(() => {
+    if (isPlaying && currentAyah < totalAyahs) {
+      preloadNextAyah(currentAyah + 1);
+    } else if (isPlaying && currentAyah === totalAyahs && continuousPlay && surahNumber < 114) {
+      // Preload first ayah of next surah
+      preloadNextAyah(1, surahNumber + 1);
+    }
+  }, [isPlaying, currentAyah, totalAyahs, surahNumber, continuousPlay, preloadNextAyah]);
   const handleEnded = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -150,13 +178,19 @@ export default function AudioPlayer({
     if (currentAyah < totalAyahs) {
       wasPlayingRef.current = true; // Keep playing for next ayah
       onAyahChange(currentAyah + 1);
-      // loadAudio will be triggered by useEffect, canplaythrough will auto-play
+      return;
+    }
+
+    // End of surah - continue to next surah if enabled
+    if (continuousPlay && surahNumber < 114 && onNextSurah) {
+      wasPlayingRef.current = true;
+      onNextSurah();
       return;
     }
 
     wasPlayingRef.current = false;
     setIsPlaying(false);
-  }, [isRepeat, currentAyah, totalAyahs, onAyahChange]);
+  }, [isRepeat, currentAyah, totalAyahs, onAyahChange, continuousPlay, surahNumber, onNextSurah]);
 
   // Attach ended handler
   useEffect(() => {
