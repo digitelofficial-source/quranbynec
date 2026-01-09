@@ -140,38 +140,25 @@ export interface DailyStats {
 }
 
 export const RECITERS: Reciter[] = [
-  // Most Popular Reciters
-  { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishary Rashid Alafasy' },
-  { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Basit Abdul Samad' },
+  // Verse-by-verse audio editions known to be available via AlQuran Cloud / Islamic Network CDN
+  { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Alafasy' },
+  { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Samad' },
   { identifier: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', englishName: 'Abdurrahmaan As-Sudais' },
-  { identifier: 'ar.saoodshuraym', name: 'سعود الشريم', englishName: 'Saud Al-Shuraim' },
-  { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
-  { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary' },
-  { identifier: 'ar.ahmedajamy', name: 'أحمد العجمي', englishName: 'Ahmed Al Ajmi' },
+  { identifier: 'ar.saoodshuraym', name: 'سعود الشريم', englishName: 'Saood bin Ibraaheem Ash-Shuraym' },
+  { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Husary' },
+  { identifier: 'ar.husarymujawwad', name: 'محمود خليل الحصري (المجود)', englishName: 'Husary (Mujawwad)' },
+  { identifier: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', englishName: 'Ahmed ibn Ali al-Ajamy' },
   { identifier: 'ar.shaatree', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Ash-Shaatree' },
-  // Additional World-Famous Reciters
-  { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi' },
-  { identifier: 'ar.minshawimujawwad', name: 'المنشاوي مجود', englishName: 'Al-Minshawi (Mujawwad)' },
-  { identifier: 'ar.husarymujawwad', name: 'الحصري مجود', englishName: 'Al-Husary (Mujawwad)' },
+  { identifier: 'ar.hudhaify', name: 'علي بن عبدالرحمن الحذيفي', englishName: 'Hudhaify' },
+  { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
   { identifier: 'ar.muhammadayyoub', name: 'محمد أيوب', englishName: 'Muhammad Ayyub' },
   { identifier: 'ar.muhammadjibreel', name: 'محمد جبريل', englishName: 'Muhammad Jibreel' },
-  { identifier: 'ar.parhizgar', name: 'شهريار پرهیزگار', englishName: 'Shahriar Parhizgar' },
-  { identifier: 'ar.aaboromee', name: 'إبراهيم الدوسري', englishName: 'Ibrahim Al-Dossari' },
-  { identifier: 'ar.haboromee', name: 'هاني الرفاعي', englishName: 'Hani Ar-Rifai' },
-  { identifier: 'ar.husarymuallem', name: 'الحصري المعلم', englishName: 'Al-Husary (Muallim)' },
-  { identifier: 'ar.abdullahbasfar', name: 'عبدالله بصفر', englishName: 'Abdullah Basfar' },
-  { identifier: 'ar.akramalaqqad', name: 'أكرم العلاقمي', englishName: 'Akram Al-Alaqmi' },
-  { identifier: 'ar.bandarbalilah', name: 'بندر بليلة', englishName: 'Bandar Balilah' },
-  { identifier: 'ar.ibrahimakhdar', name: 'إبراهيم الأخضر', englishName: 'Ibrahim Al-Akhdar' },
-  { identifier: 'ar.yaboromee', name: 'ياسر الدوسري', englishName: 'Yasser Al-Dosari' },
-  { identifier: 'ar.faboromee', name: 'فارس عباد', englishName: 'Fares Abbad' },
-  { identifier: 'ar.naboromee', name: 'ناصر القطامي', englishName: 'Nasser Al-Qatami' },
-  { identifier: 'ar.khalifaa', name: 'خليفة الطنيجي', englishName: 'Khalifah Al-Tunaiji' },
-  { identifier: 'ar.aliabdullah', name: 'علي جابر', englishName: 'Ali Jaber' },
-  { identifier: 'ar.saboromee', name: 'صلاح بو خاطر', englishName: 'Salah Bukhatir' },
-  { identifier: 'ar.tababoromee', name: 'سلمان العتيبي', englishName: 'Salman Al-Utaybi' },
+  { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Minshawi' },
+  { identifier: 'ar.parhizgar', name: 'شهريار پرهیزگار', englishName: 'Parhizgar' },
   { identifier: 'ar.aymanswoaid', name: 'أيمن سويد', englishName: 'Ayman Sowaid' },
-  { identifier: 'ar.abdulbari', name: 'عبدالباري الثبيتي', englishName: 'Abdul Bari Ath-Thubaity' },
+  { identifier: 'ar.abdullahbasfar', name: 'عبد الله بصفر', englishName: 'Abdullah Basfar' },
+  { identifier: 'ar.hanirifai', name: 'هاني الرفاعي', englishName: 'Hani Rifai' },
+  { identifier: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', englishName: 'Ibrahim Akhdar' },
 ];
 
 export const TRANSLATIONS: { identifier: string; language: string; name: string }[] = [
