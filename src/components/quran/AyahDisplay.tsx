@@ -122,6 +122,8 @@ function AyahDisplay({
           variant="ghost"
           size="icon"
           onClick={handleBookmark}
+          title={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+          aria-label={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
           className={`h-8 w-8 ${bookmarked ? 'text-accent' : 'text-muted-foreground'}`}
         >
           {bookmarked ? (
@@ -135,6 +137,8 @@ function AyahDisplay({
           variant="ghost"
           size="icon"
           onClick={handleCopy}
+          title="Copy ayah"
+          aria-label="Copy ayah"
           className="h-8 w-8 text-muted-foreground"
         >
           <Copy className="h-4 w-4" />
@@ -144,6 +148,8 @@ function AyahDisplay({
           variant="ghost"
           size="icon"
           onClick={handleShare}
+          title="Share ayah"
+          aria-label="Share ayah"
           className="h-8 w-8 text-muted-foreground"
         >
           <Share2 className="h-4 w-4" />

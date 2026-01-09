@@ -59,8 +59,23 @@ export default function HomeAudioPlayer() {
     const handlePause = () => setIsPlaying(false);
     const handleError = () => {
       setIsLoading(false);
-      setAudioError('Audio failed to load. Please try again.');
       setIsPlaying(false);
+
+      // Auto-fallback to a highly available reciter so playback keeps working.
+      if (settings.selectedReciter !== 'ar.alafasy') {
+        const fallbackUrl = getAyahAudioUrl(selectedSurah, currentAyah, 'ar.alafasy');
+        setAudioError('Selected Qari audio unavailable — switched to Alafasy for playback.');
+        audio.src = fallbackUrl;
+        audio.load();
+        if (wasPlayingRef.current) {
+          audio.play().catch(() => {
+            setAudioError('Audio failed to load. Please try again.');
+          });
+        }
+        return;
+      }
+
+      setAudioError('Audio failed to load. Please try again.');
     };
     const handleCanPlayThrough = () => {
       setIsLoading(false);
@@ -91,7 +106,7 @@ export default function HomeAudioPlayer() {
       audio.src = '';
       preload.src = '';
     };
-  }, []);
+  }, [handleAudioEnded, currentAyah, selectedSurah, settings.selectedReciter]);
 
   // Load surah info when selected surah changes
   useEffect(() => {

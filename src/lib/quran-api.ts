@@ -146,9 +146,10 @@ export function getAyahAudioUrl(
   ayahNumber: number,
   reciter: string = 'ar.alafasy'
 ): string {
-  // Audio URL (free): https://cdn.alquran.cloud/media/audio/ayah/ar.alafasy/1
+  // Prefer Islamic Network CDN (very reliable direct MP3)
+  // Example: https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3
   const ayahGlobalNumber = getGlobalAyahNumber(surahNumber, ayahNumber);
-  return `https://cdn.alquran.cloud/media/audio/ayah/${reciter}/${ayahGlobalNumber}`;
+  return `https://cdn.islamic.network/quran/audio/128/${reciter}/${ayahGlobalNumber}.mp3`;
 }
 
 // Helper to calculate global ayah number
