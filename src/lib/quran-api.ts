@@ -141,15 +141,23 @@ export async function fetchRandomAyah(translationEdition: string = 'en.sahih'): 
   };
 }
 
+// Some reciters only have 64kbps audio available on the CDN
+const RECITERS_64KBPS_ONLY = new Set([
+  'ar.abdulsamad',
+  'ar.abdurrahmaansudais',
+  'ar.saoodshuraym',
+]);
+
 export function getAyahAudioUrl(
   surahNumber: number,
   ayahNumber: number,
   reciter: string = 'ar.alafasy'
 ): string {
   // Prefer Islamic Network CDN (very reliable direct MP3)
-  // Example: https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3
+  // Use 64kbps for reciters that don't have 128kbps available
+  const bitrate = RECITERS_64KBPS_ONLY.has(reciter) ? 64 : 128;
   const ayahGlobalNumber = getGlobalAyahNumber(surahNumber, ayahNumber);
-  return `https://cdn.islamic.network/quran/audio/128/${reciter}/${ayahGlobalNumber}.mp3`;
+  return `https://cdn.islamic.network/quran/audio/${bitrate}/${reciter}/${ayahGlobalNumber}.mp3`;
 }
 
 // Helper to calculate global ayah number
