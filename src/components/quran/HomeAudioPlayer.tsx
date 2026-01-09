@@ -125,17 +125,25 @@ export default function HomeAudioPlayer() {
   }, [selectedSurah, settings.selectedReciter]);
 
   const handleAudioEnded = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (isRepeat) {
-      audioRef.current?.play().catch(console.error);
-    } else if (currentAyah < totalAyahs) {
-      setCurrentAyah(prev => prev + 1);
-      setTimeout(() => {
-        audioRef.current?.play().catch(console.error);
-      }, 200);
-    } else {
-      setIsPlaying(false);
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+      return;
     }
-  }, [isRepeat, currentAyah, totalAyahs]);
+
+    if (currentAyah < totalAyahs) {
+      const nextAyah = currentAyah + 1;
+      setCurrentAyah(nextAyah);
+      loadAudio(nextAyah);
+      audio.play().catch(console.error);
+      return;
+    }
+
+    setIsPlaying(false);
+  }, [isRepeat, currentAyah, totalAyahs, loadAudio]);
 
   // Re-attach ended handler when dependencies change
   useEffect(() => {
@@ -145,34 +153,59 @@ export default function HomeAudioPlayer() {
   }, [handleAudioEnded]);
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
     setAudioError(null);
-    
+
     if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      setIsLoading(true);
-      audioRef.current.play()
-        .then(() => setIsLoading(false))
-        .catch((err) => {
-          console.error('Playback error:', err);
-          setAudioError('Playback failed. Click play to try again.');
-          setIsLoading(false);
-        });
+      audio.pause();
+      return;
     }
+
+    // Ensure we have a source before attempting playback
+    if (!audio.src) {
+      loadAudio(currentAyah);
+    }
+
+    setIsLoading(true);
+    audio
+      .play()
+      .then(() => setIsLoading(false))
+      .catch((err) => {
+        console.error('Playback error:', err);
+        setAudioError('Playback failed. Click play to try again.');
+        setIsLoading(false);
+      });
   };
 
   const playPrevious = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (currentAyah > 1) {
-      setCurrentAyah(currentAyah - 1);
-      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
+      const prevAyah = currentAyah - 1;
+      setCurrentAyah(prevAyah);
+      loadAudio(prevAyah);
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        setAudioError('Playback failed. Click play to try again.');
+      });
     }
   };
 
   const playNext = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (currentAyah < totalAyahs) {
-      setCurrentAyah(currentAyah + 1);
-      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
+      const nextAyah = currentAyah + 1;
+      setCurrentAyah(nextAyah);
+      loadAudio(nextAyah);
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        setAudioError('Playback failed. Click play to try again.');
+      });
     }
   };
 

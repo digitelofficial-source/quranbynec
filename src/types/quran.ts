@@ -72,13 +72,13 @@ export interface UserSettings {
 
 export const RECITERS: Reciter[] = [
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishary Rashid Alafasy' },
-  { identifier: 'ar.abdulbasitmurattal', name: 'عبد الباسط', englishName: 'Abdul Basit (Murattal)' },
+  { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Samad' },
   { identifier: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', englishName: 'Abdurrahmaan As-Sudais' },
-  { identifier: 'ar.saaborheem', name: 'سعود الشريم', englishName: 'Saud Al-Shuraim' },
-  { identifier: 'ar.maaboralmuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
-  { identifier: 'ar.minaborbalkhbawy', name: 'المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi' },
+  { identifier: 'ar.saoodshuraym', name: 'سعود الشريم', englishName: 'Saud Al-Shuraim' },
+  { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
   { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary' },
-  { identifier: 'ar.ahmedborajmi', name: 'أحمد العجمي', englishName: 'Ahmed Al Ajmi' },
+  { identifier: 'ar.ahmedajamy', name: 'أحمد العجمي', englishName: 'Ahmed Al Ajmi' },
+  { identifier: 'ar.shaatree', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Ash-Shaatree' },
 ];
 
 export const TRANSLATIONS: { identifier: string; language: string; name: string }[] = [

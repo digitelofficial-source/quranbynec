@@ -127,17 +127,25 @@ export default function AudioPlayer({
   }, [surahNumber, settings.selectedReciter]);
 
   const handleEnded = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (isRepeat) {
-      audioRef.current?.play().catch(console.error);
-    } else if (currentAyah < totalAyahs) {
-      onAyahChange(currentAyah + 1);
-      setTimeout(() => {
-        audioRef.current?.play().catch(console.error);
-      }, 200);
-    } else {
-      setIsPlaying(false);
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+      return;
     }
-  }, [isRepeat, currentAyah, totalAyahs, onAyahChange]);
+
+    if (currentAyah < totalAyahs) {
+      const nextAyah = currentAyah + 1;
+      onAyahChange(nextAyah);
+      loadAudio(nextAyah);
+      audio.play().catch(console.error);
+      return;
+    }
+
+    setIsPlaying(false);
+  }, [isRepeat, currentAyah, totalAyahs, onAyahChange, loadAudio]);
 
   // Attach ended handler
   useEffect(() => {
@@ -165,16 +173,32 @@ export default function AudioPlayer({
   };
 
   const playPrevious = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (currentAyah > 1) {
-      onAyahChange(currentAyah - 1);
-      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
+      const prevAyah = currentAyah - 1;
+      onAyahChange(prevAyah);
+      loadAudio(prevAyah);
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        setError('Playback failed. Try again.');
+      });
     }
   };
 
   const playNext = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (currentAyah < totalAyahs) {
-      onAyahChange(currentAyah + 1);
-      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
+      const nextAyah = currentAyah + 1;
+      onAyahChange(nextAyah);
+      loadAudio(nextAyah);
+      audio.play().catch((err) => {
+        console.error('Playback error:', err);
+        setError('Playback failed. Try again.');
+      });
     }
   };
 

@@ -248,7 +248,15 @@ export default function Index() {
               <Link to="/bookmarks" className="hover:text-primary transition-colors">Bookmarks</Link>
             </div>
             <p className="text-xs text-muted-foreground">
-              Quran data provided by AlQuran.cloud API • Built with ❤️ for the Ummah
+              Quran data provided by AlQuran.cloud API • Developed by{' '}
+              <a
+                href="https://www.thenanosoft.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                NAUMAN ELLAHI
+              </a>
             </p>
           </div>
         </div>
