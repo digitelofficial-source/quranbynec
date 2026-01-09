@@ -1,6 +1,6 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Bookmark, ReadingProgress, UserSettings, DEFAULT_SETTINGS } from '@/types/quran';
+import { Bookmark, ReadingProgress, UserSettings, DEFAULT_SETTINGS, RECITERS } from '@/types/quran';
 
 interface QuranContextType {
   settings: UserSettings;
@@ -19,6 +19,15 @@ export function QuranProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useLocalStorage<UserSettings>('quran-settings', DEFAULT_SETTINGS);
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('quran-bookmarks', []);
   const [readingProgress, setReadingProgress] = useLocalStorage<ReadingProgress | null>('quran-progress', null);
+
+  // If an older build stored an invalid reciter identifier in localStorage,
+  // reset it to a known-good option so audio never 404s silently.
+  useEffect(() => {
+    const valid = new Set(RECITERS.map((r) => r.identifier));
+    if (!valid.has(settings.selectedReciter)) {
+      setSettings((prev) => ({ ...prev, selectedReciter: DEFAULT_SETTINGS.selectedReciter }));
+    }
+  }, [settings.selectedReciter, setSettings]);
 
   const updateSettings = (updates: Partial<UserSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));

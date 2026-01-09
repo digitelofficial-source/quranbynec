@@ -141,10 +141,14 @@ export async function fetchRandomAyah(translationEdition: string = 'en.sahih'): 
   };
 }
 
-export function getAyahAudioUrl(surahNumber: number, ayahNumber: number, reciter: string = 'ar.alafasy'): string {
-  // Format: https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3
+export function getAyahAudioUrl(
+  surahNumber: number,
+  ayahNumber: number,
+  reciter: string = 'ar.alafasy'
+): string {
+  // Audio URL (free): https://cdn.alquran.cloud/media/audio/ayah/ar.alafasy/1
   const ayahGlobalNumber = getGlobalAyahNumber(surahNumber, ayahNumber);
-  return `https://cdn.islamic.network/quran/audio/128/${reciter}/${ayahGlobalNumber}.mp3`;
+  return `https://cdn.alquran.cloud/media/audio/ayah/${reciter}/${ayahGlobalNumber}`;
 }
 
 // Helper to calculate global ayah number
