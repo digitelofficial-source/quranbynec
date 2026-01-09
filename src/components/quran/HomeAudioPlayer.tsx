@@ -65,10 +65,29 @@ export default function HomeAudioPlayer() {
   useEffect(() => {
     continuousPlayRef.current = continuousPlay;
   }, [continuousPlay]);
+  // When reciter changes globally, reset effective reciter and reload audio immediately
   useEffect(() => {
+    const prevReciter = selectedReciterRef.current;
     selectedReciterRef.current = settings.selectedReciter;
     effectiveReciterRef.current = settings.selectedReciter;
-  }, [settings.selectedReciter]);
+
+    // If reciter actually changed, reload the current audio
+    if (prevReciter !== settings.selectedReciter && audioRef.current) {
+      setAudioError(null);
+      const url = getAyahAudioUrl(selectedSurahRef.current, currentAyahRef.current, settings.selectedReciter);
+      audioRef.current.src = url;
+      audioRef.current.load();
+
+      // If was playing, continue playing with new reciter
+      if (wasPlayingRef.current || isPlaying) {
+        wasPlayingRef.current = true;
+        setIsLoading(true);
+        audioRef.current.play()
+          .then(() => setIsLoading(false))
+          .catch(() => setIsLoading(false));
+      }
+    }
+  }, [settings.selectedReciter, isPlaying]);
 
   const loadAudio = useCallback((surahNum: number, ayahNum: number) => {
     const audio = audioRef.current;

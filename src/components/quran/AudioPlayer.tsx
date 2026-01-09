@@ -62,10 +62,29 @@ export default function AudioPlayer({
   useEffect(() => {
     surahNumberRef.current = surahNumber;
   }, [surahNumber]);
+  // When reciter changes globally, reset effective reciter and reload audio immediately
   useEffect(() => {
+    const prevReciter = selectedReciterRef.current;
     selectedReciterRef.current = settings.selectedReciter;
     effectiveReciterRef.current = settings.selectedReciter;
-  }, [settings.selectedReciter]);
+
+    // If reciter actually changed, reload the current audio
+    if (prevReciter !== settings.selectedReciter && audioRef.current) {
+      setError(null);
+      const url = getAyahAudioUrl(surahNumberRef.current, currentAyahRef.current, settings.selectedReciter);
+      audioRef.current.src = url;
+      audioRef.current.load();
+
+      // If was playing, continue playing with new reciter
+      if (wasPlayingRef.current || isPlaying) {
+        wasPlayingRef.current = true;
+        setIsLoading(true);
+        audioRef.current.play()
+          .then(() => setIsLoading(false))
+          .catch(() => setIsLoading(false));
+      }
+    }
+  }, [settings.selectedReciter, isPlaying]);
 
   // Get current reciter name
   const currentReciter = RECITERS.find((r) => r.identifier === settings.selectedReciter);
