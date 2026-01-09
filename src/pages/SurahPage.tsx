@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Play, Book, Layers, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +15,7 @@ import { Surah, AyahWithTranslation } from '@/types/quran';
 export default function SurahPage() {
   const { number } = useParams<{ number: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const surahNumber = parseInt(number || '1', 10);
   const highlightAyah = parseInt(searchParams.get('ayah') || '0', 10);
 
@@ -85,6 +86,15 @@ export default function SurahPage() {
     setCurrentAyah(ayahNumber);
     const element = document.getElementById(`ayah-${ayahNumber}`);
     element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Navigate to next surah for continuous playback
+  const handleNextSurah = () => {
+    if (surahNumber < 114) {
+      navigate(`/surah/${surahNumber + 1}`);
+      setCurrentAyah(1);
+      setShowAudioPlayer(true);
+    }
   };
 
   // Bismillah for all surahs except At-Tawbah (9)
@@ -231,6 +241,7 @@ export default function SurahPage() {
           onAyahChange={handleAyahChange}
           surahName={surah.englishName}
           onClose={() => setShowAudioPlayer(false)}
+          onNextSurah={handleNextSurah}
         />
       )}
 
