@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Book, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,7 +6,7 @@ import { useQuran } from '@/context/QuranContext';
 import { fetchSurahWithTranslation, getAyahAudioUrl } from '@/lib/quran-api';
 import { AyahWithTranslation, Surah } from '@/types/quran';
 import { Link } from 'react-router-dom';
-import { useRef } from 'react';
+
 
 export default function QuranReader() {
   const { settings } = useQuran();
