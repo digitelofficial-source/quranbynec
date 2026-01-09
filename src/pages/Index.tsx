@@ -8,11 +8,14 @@ import DailyAyah from '@/components/quran/DailyAyah';
 import SurahCard from '@/components/quran/SurahCard';
 import JuzCard from '@/components/quran/JuzCard';
 import HomeAudioPlayer from '@/components/quran/HomeAudioPlayer';
-import QuranReader from '@/components/quran/QuranReader';
+import PhysicalQuranReader from '@/components/quran/PhysicalQuranReader';
 import FeaturesSection from '@/components/quran/FeaturesSection';
 import AboutSection from '@/components/quran/AboutSection';
 import StatsSection from '@/components/quran/StatsSection';
 import QuickLinksSection from '@/components/quran/QuickLinksSection';
+import ReadingStreakCard from '@/components/quran/ReadingStreakCard';
+import AchievementsCard from '@/components/quran/AchievementsCard';
+import ReadingGoalsCard from '@/components/quran/ReadingGoalsCard';
 import { fetchAllSurahs, JUZ_INFO } from '@/lib/quran-api';
 import { Surah } from '@/types/quran';
 import { useQuran } from '@/context/QuranContext';
@@ -121,8 +124,25 @@ export default function Index() {
             {/* Audio Player */}
             <HomeAudioPlayer />
             
-            {/* Quran Reader */}
-            <QuranReader />
+            {/* Physical Quran Reader - 16 Ayahs per page */}
+            <PhysicalQuranReader />
+          </div>
+        </section>
+
+        {/* Reading Progress Section */}
+        <section className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Your Reading Journey
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Track your progress, maintain streaks, and unlock achievements
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ReadingStreakCard />
+            <ReadingGoalsCard />
+            <AchievementsCard />
           </div>
         </section>
 
