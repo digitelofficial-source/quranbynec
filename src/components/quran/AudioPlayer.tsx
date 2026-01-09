@@ -7,12 +7,14 @@ import {
   Volume2, 
   VolumeX,
   Repeat,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useQuran } from '@/context/QuranContext';
 import { getAyahAudioUrl } from '@/lib/quran-api';
+import { RECITERS } from '@/types/quran';
 
 interface AudioPlayerProps {
   surahNumber: number;
@@ -34,38 +36,81 @@ export default function AudioPlayer({
   const { settings } = useQuran();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isRepeat, setIsRepeat] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
+  const [error, setError] = useState<string | null>(null);
 
+  // Get current reciter name
+  const currentReciter = RECITERS.find(r => r.identifier === settings.selectedReciter);
+
+  // Initialize audio element
   useEffect(() => {
     const audio = new Audio();
+    audio.preload = 'metadata';
     audioRef.current = audio;
 
-    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime));
-    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('play', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+      setIsLoading(false);
+      setError(null);
+    };
+    const handlePlay = () => {
+      setIsPlaying(true);
+      setIsLoading(false);
+    };
+    const handlePause = () => setIsPlaying(false);
+    const handleError = () => {
+      setIsLoading(false);
+      setError('Audio failed to load');
+      setIsPlaying(false);
+    };
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setError(null);
+    };
+    const handleWaiting = () => setIsLoading(true);
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('waiting', handleWaiting);
 
     return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('waiting', handleWaiting);
       audio.pause();
       audio.src = '';
     };
   }, []);
 
+  // Load audio when ayah or reciter changes
   useEffect(() => {
-    loadAudio(currentAyah);
-  }, [currentAyah, settings.selectedReciter]);
+    if (audioRef.current) {
+      loadAudio(currentAyah);
+    }
+  }, [currentAyah, settings.selectedReciter, surahNumber]);
 
+  // Update playback speed
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = settings.playbackSpeed;
     }
   }, [settings.playbackSpeed]);
 
+  // Update volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume / 100;
@@ -74,6 +119,8 @@ export default function AudioPlayer({
 
   const loadAudio = useCallback((ayahNum: number) => {
     if (!audioRef.current) return;
+    setIsLoading(true);
+    setError(null);
     const url = getAyahAudioUrl(surahNumber, ayahNum, settings.selectedReciter);
     audioRef.current.src = url;
     audioRef.current.load();
@@ -81,15 +128,18 @@ export default function AudioPlayer({
 
   const handleEnded = useCallback(() => {
     if (isRepeat) {
-      audioRef.current?.play();
+      audioRef.current?.play().catch(console.error);
     } else if (currentAyah < totalAyahs) {
       onAyahChange(currentAyah + 1);
-      setTimeout(() => audioRef.current?.play(), 100);
+      setTimeout(() => {
+        audioRef.current?.play().catch(console.error);
+      }, 200);
     } else {
       setIsPlaying(false);
     }
   }, [isRepeat, currentAyah, totalAyahs, onAyahChange]);
 
+  // Attach ended handler
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = handleEnded;
@@ -98,43 +148,52 @@ export default function AudioPlayer({
 
   const togglePlay = () => {
     if (!audioRef.current) return;
+    setError(null);
+    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(console.error);
+      setIsLoading(true);
+      audioRef.current.play()
+        .then(() => setIsLoading(false))
+        .catch((err) => {
+          console.error('Playback error:', err);
+          setError('Playback failed. Try again.');
+          setIsLoading(false);
+        });
     }
   };
 
   const playPrevious = () => {
     if (currentAyah > 1) {
       onAyahChange(currentAyah - 1);
-      setTimeout(() => audioRef.current?.play(), 100);
+      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
     }
   };
 
   const playNext = () => {
     if (currentAyah < totalAyahs) {
       onAyahChange(currentAyah + 1);
-      setTimeout(() => audioRef.current?.play(), 100);
+      setTimeout(() => audioRef.current?.play().catch(console.error), 200);
     }
   };
 
   const formatTime = (time: number) => {
-    if (!isFinite(time)) return '0:00';
+    if (!isFinite(time) || isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const handleSeek = (value: number[]) => {
-    if (audioRef.current) {
+    if (audioRef.current && isFinite(value[0])) {
       audioRef.current.currentTime = value[0];
     }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg shadow-lg">
-      <div className="container max-w-4xl mx-auto px-4 py-3">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/98 backdrop-blur-xl shadow-2xl">
+      <div className="container max-w-4xl mx-auto px-4 py-4">
         {/* Progress bar */}
         <div className="mb-3">
           <Slider
@@ -150,21 +209,28 @@ export default function AudioPlayer({
           </div>
         </div>
 
+        {/* Error message */}
+        {error && (
+          <p className="text-center text-xs text-destructive mb-2">{error}</p>
+        )}
+
         {/* Controls */}
         <div className="flex items-center justify-between gap-4">
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{surahName}</p>
-            <p className="text-xs text-muted-foreground">Ayah {currentAyah} of {totalAyahs}</p>
+            <p className="text-sm font-semibold truncate text-foreground">{surahName}</p>
+            <p className="text-xs text-muted-foreground">
+              Ayah {currentAyah} of {totalAyahs} • {currentReciter?.englishName || 'Reciter'}
+            </p>
           </div>
 
           {/* Main Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsRepeat(!isRepeat)}
-              className={isRepeat ? 'text-primary' : 'text-muted-foreground'}
+              className={`h-9 w-9 ${isRepeat ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
             >
               <Repeat className="h-4 w-4" />
             </Button>
@@ -174,6 +240,7 @@ export default function AudioPlayer({
               size="icon"
               onClick={playPrevious}
               disabled={currentAyah <= 1}
+              className="h-9 w-9"
             >
               <SkipBack className="h-5 w-5" />
             </Button>
@@ -183,8 +250,11 @@ export default function AudioPlayer({
               size="icon"
               className="h-12 w-12 rounded-full"
               onClick={togglePlay}
+              disabled={isLoading}
             >
-              {isPlaying ? (
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : isPlaying ? (
                 <Pause className="h-5 w-5" />
               ) : (
                 <Play className="h-5 w-5 ml-0.5" />
@@ -196,6 +266,7 @@ export default function AudioPlayer({
               size="icon"
               onClick={playNext}
               disabled={currentAyah >= totalAyahs}
+              className="h-9 w-9"
             >
               <SkipForward className="h-5 w-5" />
             </Button>
@@ -204,7 +275,7 @@ export default function AudioPlayer({
               variant="ghost"
               size="icon"
               onClick={() => setIsMuted(!isMuted)}
-              className="hidden sm:flex"
+              className="h-9 w-9 hidden sm:flex"
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
@@ -227,7 +298,7 @@ export default function AudioPlayer({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-muted-foreground"
+              className="text-muted-foreground h-9 w-9"
             >
               <X className="h-5 w-5" />
             </Button>
