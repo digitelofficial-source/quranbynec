@@ -36,16 +36,80 @@ export default function HomeAudioPlayer() {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [continuousPlay, setContinuousPlay] = useState(true); // Auto-continue to next surah
 
-  // Track if we were playing before a reciter change
+  // Track if we were playing before a reciter/surah/ayah change
   const wasPlayingRef = useRef(false);
 
-  // Initialize audio element and preloader
+  // Keep latest values for stable event handlers (avoid re-creating Audio elements)
+  const selectedSurahRef = useRef(selectedSurah);
+  const currentAyahRef = useRef(currentAyah);
+  const totalAyahsRef = useRef(totalAyahs);
+  const isRepeatRef = useRef(isRepeat);
+  const continuousPlayRef = useRef(continuousPlay);
+
+  const selectedReciterRef = useRef(settings.selectedReciter);
+  // Effective reciter may fall back to a reliable reciter after the first error
+  const effectiveReciterRef = useRef(settings.selectedReciter);
+
+  useEffect(() => {
+    selectedSurahRef.current = selectedSurah;
+  }, [selectedSurah]);
+  useEffect(() => {
+    currentAyahRef.current = currentAyah;
+  }, [currentAyah]);
+  useEffect(() => {
+    totalAyahsRef.current = totalAyahs;
+  }, [totalAyahs]);
+  useEffect(() => {
+    isRepeatRef.current = isRepeat;
+  }, [isRepeat]);
+  useEffect(() => {
+    continuousPlayRef.current = continuousPlay;
+  }, [continuousPlay]);
+  useEffect(() => {
+    selectedReciterRef.current = settings.selectedReciter;
+    effectiveReciterRef.current = settings.selectedReciter;
+  }, [settings.selectedReciter]);
+
+  const loadAudio = useCallback((surahNum: number, ayahNum: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const url = getAyahAudioUrl(surahNum, ayahNum, effectiveReciterRef.current);
+
+    // If we're already on this URL, don't reload (prevents a tiny gap).
+    if (audio.src === url) {
+      if (wasPlayingRef.current && audio.paused) {
+        setIsLoading(true);
+        audio
+          .play()
+          .then(() => setIsLoading(false))
+          .catch(() => setIsLoading(false));
+      }
+      return;
+    }
+
+    setIsLoading(true);
+    audio.src = url;
+    audio.load();
+  }, []);
+
+  const preloadAyah = useCallback((surahNum: number, ayahNum: number) => {
+    const preload = preloadRef.current;
+    if (!preload) return;
+
+    const url = getAyahAudioUrl(surahNum, ayahNum, effectiveReciterRef.current);
+    if (preload.src === url) return;
+
+    preload.src = url;
+    preload.load();
+  }, []);
+
+  // Initialize audio element and preloader (ONCE)
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'auto';
     audioRef.current = audio;
 
-    // Create preload audio element for next ayah
     const preload = new Audio();
     preload.preload = 'auto';
     preload.volume = 0; // Silent preload
@@ -59,16 +123,34 @@ export default function HomeAudioPlayer() {
     };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleWaiting = () => setIsLoading(true);
+
+    const handleCanPlayThrough = () => {
+      setIsLoading(false);
+      setAudioError(null);
+      if (wasPlayingRef.current) {
+        audio.play().catch(() => {
+          // Ignore: user-gesture restrictions should not apply once playback started.
+        });
+      }
+    };
+
     const handleError = () => {
       setIsLoading(false);
       setIsPlaying(false);
 
-      // Auto-fallback to a highly available reciter so playback keeps working.
-      if (settings.selectedReciter !== 'ar.alafasy') {
-        const fallbackUrl = getAyahAudioUrl(selectedSurah, currentAyah, 'ar.alafasy');
+      const surahNum = selectedSurahRef.current;
+      const ayahNum = currentAyahRef.current;
+
+      // One-time fallback to a highly available reciter so continuous playback keeps working.
+      if (effectiveReciterRef.current !== 'ar.alafasy') {
+        effectiveReciterRef.current = 'ar.alafasy';
+        const fallbackUrl = getAyahAudioUrl(surahNum, ayahNum, 'ar.alafasy');
         setAudioError('Selected Qari audio unavailable — switched to Alafasy for playback.');
+
         audio.src = fallbackUrl;
         audio.load();
+
         if (wasPlayingRef.current) {
           audio.play().catch(() => {
             setAudioError('Audio failed to load. Please try again.');
@@ -79,14 +161,6 @@ export default function HomeAudioPlayer() {
 
       setAudioError('Audio failed to load. Please try again.');
     };
-    const handleCanPlayThrough = () => {
-      setIsLoading(false);
-      setAudioError(null);
-      // Auto-resume if we were playing
-      if (wasPlayingRef.current) {
-        audio.play().catch(console.error);
-      }
-    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -94,6 +168,7 @@ export default function HomeAudioPlayer() {
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('error', handleError);
     audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('waiting', handleWaiting);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -102,11 +177,12 @@ export default function HomeAudioPlayer() {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.removeEventListener('waiting', handleWaiting);
       audio.pause();
       audio.src = '';
       preload.src = '';
     };
-  }, [currentAyah, selectedSurah, settings.selectedReciter]);
+  }, []);
 
   // Load surah info when selected surah changes
   useEffect(() => {
@@ -123,16 +199,16 @@ export default function HomeAudioPlayer() {
     loadSurahInfo();
   }, [selectedSurah]);
 
-  // Load audio when ayah or reciter changes
+  // Load audio when ayah/surah/reciter changes
   useEffect(() => {
-    if (audioRef.current && surahInfo) {
-      // Only update wasPlayingRef if we're not already in a "keep playing" state
-      if (!wasPlayingRef.current) {
-        wasPlayingRef.current = isPlaying;
-      }
-      loadAudio(currentAyah);
-    }
-  }, [currentAyah, settings.selectedReciter, surahInfo]);
+    if (!audioRef.current) return;
+
+    // If we were already playing (or auto-advancing), keep playing after the source swap.
+    wasPlayingRef.current = wasPlayingRef.current || isPlaying;
+    setAudioError(null);
+
+    loadAudio(selectedSurah, currentAyah);
+  }, [selectedSurah, currentAyah, settings.selectedReciter, isPlaying, loadAudio]);
 
   // Update volume
   useEffect(() => {
@@ -148,64 +224,76 @@ export default function HomeAudioPlayer() {
     }
   }, [settings.playbackSpeed]);
 
-  const loadAudio = useCallback((ayahNum: number, surahNum?: number) => {
-    if (!audioRef.current) return;
-    setIsLoading(true);
-    const surah = surahNum || selectedSurah;
-    const url = getAyahAudioUrl(surah, ayahNum, settings.selectedReciter);
-    audioRef.current.src = url;
-    audioRef.current.load();
-  }, [selectedSurah, settings.selectedReciter]);
-
-  // Preload the next ayah for instant transitions
-  const preloadNextAyah = useCallback((nextAyahNum: number, nextSurahNum?: number) => {
-    if (!preloadRef.current) return;
-    const surah = nextSurahNum || selectedSurah;
-    const url = getAyahAudioUrl(surah, nextAyahNum, settings.selectedReciter);
-    preloadRef.current.src = url;
-    preloadRef.current.load();
-  }, [selectedSurah, settings.selectedReciter]);
-
   // Preload next ayah when current one is playing
   useEffect(() => {
-    if (isPlaying && currentAyah < totalAyahs) {
-      preloadNextAyah(currentAyah + 1);
-    } else if (isPlaying && currentAyah === totalAyahs && continuousPlay && selectedSurah < 114) {
-      // Preload first ayah of next surah
-      preloadNextAyah(1, selectedSurah + 1);
+    if (!isPlaying) return;
+
+    if (currentAyah < totalAyahs) {
+      preloadAyah(selectedSurah, currentAyah + 1);
+    } else if (currentAyah === totalAyahs && continuousPlay && selectedSurah < 114) {
+      preloadAyah(selectedSurah + 1, 1);
     }
-  }, [isPlaying, currentAyah, totalAyahs, selectedSurah, continuousPlay, preloadNextAyah]);
+  }, [isPlaying, currentAyah, totalAyahs, selectedSurah, continuousPlay, preloadAyah]);
 
   const handleAudioEnded = useCallback(() => {
     const audio = audioRef.current;
+    const preload = preloadRef.current;
     if (!audio) return;
 
-    if (isRepeat) {
+    if (isRepeatRef.current) {
       audio.currentTime = 0;
       audio.play().catch(console.error);
       return;
     }
 
-    if (currentAyah < totalAyahs) {
-      wasPlayingRef.current = true;
-      setCurrentAyah(currentAyah + 1);
-      return;
+    const surahNum = selectedSurahRef.current;
+    const ayahNum = currentAyahRef.current;
+    const total = totalAyahsRef.current;
+    const continuous = continuousPlayRef.current;
+
+    let nextSurah = surahNum;
+    let nextAyah = ayahNum + 1;
+
+    if (ayahNum >= total) {
+      if (continuous && surahNum < 114) {
+        nextSurah = surahNum + 1;
+        nextAyah = 1;
+      } else {
+        wasPlayingRef.current = false;
+        setIsPlaying(false);
+        return;
+      }
     }
 
-    // End of surah - continue to next surah if enabled
-    if (continuousPlay && selectedSurah < 114) {
-      wasPlayingRef.current = true;
-      const nextSurah = selectedSurah + 1;
+    wasPlayingRef.current = true;
+    setAudioError(null);
+
+    const nextUrl = getAyahAudioUrl(nextSurah, nextAyah, effectiveReciterRef.current);
+    const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 3;
+
+    if (canUsePreload) {
+      audio.src = preload.src;
+      audio.currentTime = 0;
+      setIsLoading(false);
+      audio.play().catch(() => {
+        // If play fails, user can tap play again.
+      });
+    } else {
+      audio.src = nextUrl;
+      audio.load();
+      setIsLoading(true);
+      audio.play().catch(() => {
+        // If play fails, user can tap play again.
+      });
+    }
+
+    if (nextSurah !== surahNum) {
       setSelectedSurah(nextSurah);
-      setCurrentAyah(1);
-      return;
     }
+    setCurrentAyah(nextAyah);
+  }, []);
 
-    wasPlayingRef.current = false;
-    setIsPlaying(false);
-  }, [isRepeat, currentAyah, totalAyahs, continuousPlay, selectedSurah]);
-
-  // Re-attach ended handler when dependencies change
+  // Attach ended handler
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onended = handleAudioEnded;
@@ -226,7 +314,7 @@ export default function HomeAudioPlayer() {
 
     // Ensure we have a source before attempting playback
     if (!audio.src) {
-      loadAudio(currentAyah);
+      loadAudio(selectedSurah, currentAyah);
     }
 
     wasPlayingRef.current = true;

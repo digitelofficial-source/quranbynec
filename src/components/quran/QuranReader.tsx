@@ -16,7 +16,32 @@ export default function QuranReader() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRef = useRef<HTMLAudioElement | null>(null);
+
+  const wasPlayingRef = useRef(false);
+  const effectiveReciterRef = useRef(settings.selectedReciter);
+
+  const selectedSurahRef = useRef(selectedSurah);
+  const currentAyahIndexRef = useRef(currentAyahIndex);
+  const ayahsRef = useRef<AyahWithTranslation[]>(ayahs);
+
+  useEffect(() => {
+    selectedSurahRef.current = selectedSurah;
+  }, [selectedSurah]);
+  useEffect(() => {
+    currentAyahIndexRef.current = currentAyahIndex;
+  }, [currentAyahIndex]);
+  useEffect(() => {
+    ayahsRef.current = ayahs;
+  }, [ayahs]);
+
+  useEffect(() => {
+    effectiveReciterRef.current = settings.selectedReciter;
+    setAudioError(null);
+  }, [settings.selectedReciter]);
 
   useEffect(() => {
     async function loadSurah() {
@@ -35,22 +60,161 @@ export default function QuranReader() {
     loadSurah();
   }, [selectedSurah, settings.selectedTranslation]);
 
-  // Audio setup
-  useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.onended = () => setIsPlaying(false);
-    audioRef.current.onplay = () => setIsPlaying(true);
-    audioRef.current.onpause = () => setIsPlaying(false);
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-    };
+  const getUrl = useCallback((surahNumber: number, ayahInSurah: number) => {
+    return getAyahAudioUrl(surahNumber, ayahInSurah, effectiveReciterRef.current);
   }, []);
 
+  const loadAndMaybePlay = useCallback((surahNumber: number, ayahInSurah: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const url = getUrl(surahNumber, ayahInSurah);
+
+    // Avoid reloading the exact same audio (important when we start from preloaded src).
+    if (audio.src !== url) {
+      audio.src = url;
+      audio.load();
+    }
+
+    if (wasPlayingRef.current) {
+      audio.play().catch(() => {
+        // User can press play again if needed.
+      });
+    }
+  }, [getUrl]);
+
+  // Audio setup
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audioRef.current = audio;
+
+    const preload = new Audio();
+    preload.preload = 'auto';
+    preload.volume = 0;
+    preloadRef.current = preload;
+
+    const handleEnded = () => {
+      if (!wasPlayingRef.current) {
+        setIsPlaying(false);
+        return;
+      }
+
+      const list = ayahsRef.current;
+      const idx = currentAyahIndexRef.current;
+      const surahNum = selectedSurahRef.current;
+
+      // Determine next target (next ayah, or next surah)
+      let nextSurah = surahNum;
+      let nextIndex = idx + 1;
+
+      if (nextIndex >= list.length) {
+        if (surahNum < 114) {
+          nextSurah = surahNum + 1;
+          nextIndex = 0;
+        } else {
+          wasPlayingRef.current = false;
+          setIsPlaying(false);
+          return;
+        }
+      }
+
+      const nextAyahInSurah = nextIndex === 0 && nextSurah !== surahNum ? 1 : list[nextIndex]?.numberInSurah;
+      const nextUrl = getUrl(nextSurah, nextAyahInSurah || 1);
+
+      const canUsePreload =
+        !!preloadRef.current &&
+        preloadRef.current.src === nextUrl &&
+        preloadRef.current.readyState >= 3;
+
+      if (canUsePreload) {
+        audio.src = preloadRef.current!.src;
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // Ignore.
+        });
+      }
+
+      if (nextSurah !== surahNum) {
+        setSelectedSurah(nextSurah);
+      }
+      setCurrentAyahIndex(nextIndex);
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    const handleError = () => {
+      if (effectiveReciterRef.current !== 'ar.alafasy') {
+        effectiveReciterRef.current = 'ar.alafasy';
+        setAudioError('Selected Qari audio unavailable — switched to Alafasy for playback.');
+        const list = ayahsRef.current;
+        const idx = currentAyahIndexRef.current;
+        const ayahInSurah = list[idx]?.numberInSurah || 1;
+        loadAndMaybePlay(selectedSurahRef.current, ayahInSurah);
+        return;
+      }
+
+      setAudioError('Audio failed to load. Please try again.');
+      wasPlayingRef.current = false;
+      setIsPlaying(false);
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+      audio.pause();
+      audio.src = '';
+      preload.src = '';
+    };
+  }, [getUrl, loadAndMaybePlay]);
+
+  // Keep playback rate in sync
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = settings.playbackSpeed;
+    }
+  }, [settings.playbackSpeed]);
+
   const currentAyah = ayahs[currentAyahIndex];
+
+  // Preload next ayah while playing
+  useEffect(() => {
+    if (!isPlaying || !currentAyah) return;
+
+    const preload = preloadRef.current;
+    if (!preload) return;
+
+    const list = ayahs;
+    const idx = currentAyahIndex;
+
+    let nextSurah = selectedSurah;
+    let nextIndex = idx + 1;
+
+    if (nextIndex >= list.length) {
+      if (selectedSurah < 114) {
+        nextSurah = selectedSurah + 1;
+        nextIndex = 0;
+      } else {
+        return;
+      }
+    }
+
+    const nextAyahInSurah = nextIndex === 0 && nextSurah !== selectedSurah ? 1 : list[nextIndex]?.numberInSurah;
+    const nextUrl = getUrl(nextSurah, nextAyahInSurah || 1);
+
+    if (preload.src !== nextUrl) {
+      preload.src = nextUrl;
+      preload.load();
+    }
+  }, [isPlaying, currentAyahIndex, currentAyah, ayahs, selectedSurah, getUrl]);
 
   const goToPrevious = () => {
     if (currentAyahIndex > 0) {
@@ -68,16 +232,35 @@ export default function QuranReader() {
     }
   };
 
+  useEffect(() => {
+    if (!currentAyah) return;
+
+    if (audioRef.current) {
+      audioRef.current.playbackRate = settings.playbackSpeed;
+    }
+
+    // When auto-advancing (or user navigates) while playing, keep playback continuous.
+    if (wasPlayingRef.current) {
+      loadAndMaybePlay(selectedSurah, currentAyah.numberInSurah);
+    }
+  }, [currentAyah, selectedSurah, settings.playbackSpeed, loadAndMaybePlay]);
+
   const togglePlay = () => {
     if (!audioRef.current || !currentAyah) return;
-    
+
+    setAudioError(null);
+
     if (isPlaying) {
+      wasPlayingRef.current = false;
       audioRef.current.pause();
-    } else {
-      const url = getAyahAudioUrl(selectedSurah, currentAyah.numberInSurah, settings.selectedReciter);
-      audioRef.current.src = url;
-      audioRef.current.play().catch(console.error);
+      return;
     }
+
+    // Reset effective reciter to user-selected when starting playback
+    effectiveReciterRef.current = settings.selectedReciter;
+
+    wasPlayingRef.current = true;
+    loadAndMaybePlay(selectedSurah, currentAyah.numberInSurah);
   };
 
   const arabicNumber = currentAyah?.numberInSurah?.toLocaleString('ar-EG') || '١';
