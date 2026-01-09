@@ -153,7 +153,7 @@ export default function AudioPlayer({
       setIsLoading(false);
       setError(null);
       // Auto-resume if we were playing
-      if (wasPlayingRef.current) {
+      if (wasPlayingRef.current && audio.paused) {
         audio.play().catch(console.error);
       }
     };
@@ -215,7 +215,8 @@ export default function AudioPlayer({
       const url = getAyahAudioUrl(surahNumber, ayahNum, reciter);
 
       // If we're already on this URL (e.g., we started from preloaded audio), don't reload.
-      if (audioRef.current.src === url) return;
+      const currentSrc = audioRef.current.currentSrc || audioRef.current.src;
+      if (currentSrc === url) return;
 
       setIsLoading(true);
       setError(null);
@@ -268,14 +269,23 @@ export default function AudioPlayer({
       const reciter = effectiveReciterRef.current;
       const nextUrl = getAyahAudioUrl(surahNumber, nextAyah, reciter);
       const preload = preloadRef.current;
-      const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 3;
+      const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 2;
 
       wasPlayingRef.current = true; // Keep playing for next ayah
+      setError(null);
 
       if (canUsePreload) {
-        setError(null);
         setIsLoading(false);
-        audio.src = preload.src;
+        audio.src = preload!.src;
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // Ignore; user can press play.
+        });
+      } else {
+        // Start loading the next ayah immediately (don't wait for React state updates)
+        setIsLoading(true);
+        audio.src = nextUrl;
+        audio.load();
         audio.currentTime = 0;
         audio.play().catch(() => {
           // Ignore; user can press play.
@@ -314,6 +324,11 @@ export default function AudioPlayer({
     } else {
       // If user presses play after an earlier failure, ensure we're using the selected reciter again.
       effectiveReciterRef.current = settings.selectedReciter;
+
+      // Ensure we have a source before attempting playback (prevents immediate "failed to load")
+      if (!audioRef.current.src) {
+        loadAudio(currentAyahRef.current);
+      }
 
       wasPlayingRef.current = true;
       setIsLoading(true);

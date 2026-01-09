@@ -140,7 +140,7 @@ export interface DailyStats {
 }
 
 export const RECITERS: Reciter[] = [
-  // Curated verse-by-verse reciters (kept intentionally small to avoid broken audio editions)
+  // Stable verse-by-verse reciters (kept intentionally small to avoid broken audio editions)
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Alafasy' },
   { identifier: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', englishName: 'Abdul Samad' },
   { identifier: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', englishName: 'Abdurrahmaan As-Sudais' },
@@ -149,10 +149,7 @@ export const RECITERS: Reciter[] = [
   { identifier: 'ar.husarymujawwad', name: 'محمود خليل الحصري (المجود)', englishName: 'Husary (Mujawwad)' },
   { identifier: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', englishName: 'Ahmed ibn Ali al-Ajamy' },
   { identifier: 'ar.shaatree', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Ash-Shaatree' },
-  { identifier: 'ar.hudhaify', name: 'علي بن عبدالرحمن الحذيفي', englishName: 'Hudhaify' },
   { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly' },
-  { identifier: 'ar.muhammadayyoub', name: 'محمد أيوب', englishName: 'Muhammad Ayyub' },
-  { identifier: 'ar.muhammadjibreel', name: 'محمد جبريل', englishName: 'Muhammad Jibreel' },
   { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Minshawi' },
 ];
 

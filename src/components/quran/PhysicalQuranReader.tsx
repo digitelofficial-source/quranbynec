@@ -150,7 +150,7 @@ export default function PhysicalQuranReader() {
         !!opts?.usePreloaded &&
         !!preload &&
         preload.src === url &&
-        preload.readyState >= 3;
+        preload.readyState >= 2;
 
       setAudioError(null);
       wasPlayingRef.current = true;
