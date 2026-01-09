@@ -71,7 +71,8 @@ export default function QuranReader() {
     const url = getUrl(surahNumber, ayahInSurah);
 
     // Avoid reloading the exact same audio (important when we start from preloaded src).
-    if (audio.src !== url) {
+    const currentSrc = audio.currentSrc || audio.src;
+    if (currentSrc !== url) {
       audio.src = url;
       audio.load();
     }
@@ -125,10 +126,18 @@ export default function QuranReader() {
       const canUsePreload =
         !!preloadRef.current &&
         preloadRef.current.src === nextUrl &&
-        preloadRef.current.readyState >= 3;
+        preloadRef.current.readyState >= 2;
 
       if (canUsePreload) {
         audio.src = preloadRef.current!.src;
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // Ignore.
+        });
+      } else {
+        // Start the next ayah immediately to avoid a gap.
+        audio.src = nextUrl;
+        audio.load();
         audio.currentTime = 0;
         audio.play().catch(() => {
           // Ignore.

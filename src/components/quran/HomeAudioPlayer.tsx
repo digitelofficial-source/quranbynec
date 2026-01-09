@@ -96,7 +96,8 @@ export default function HomeAudioPlayer() {
     const url = getAyahAudioUrl(surahNum, ayahNum, effectiveReciterRef.current);
 
     // If we're already on this URL, don't reload (prevents a tiny gap).
-    if (audio.src === url) {
+    const currentSrc = audio.currentSrc || audio.src;
+    if (currentSrc === url) {
       if (wasPlayingRef.current && audio.paused) {
         setIsLoading(true);
         audio
@@ -147,7 +148,7 @@ export default function HomeAudioPlayer() {
     const handleCanPlayThrough = () => {
       setIsLoading(false);
       setAudioError(null);
-      if (wasPlayingRef.current) {
+      if (wasPlayingRef.current && audio.paused) {
         audio.play().catch(() => {
           // Ignore: user-gesture restrictions should not apply once playback started.
         });
@@ -288,7 +289,7 @@ export default function HomeAudioPlayer() {
     setAudioError(null);
 
     const nextUrl = getAyahAudioUrl(nextSurah, nextAyah, effectiveReciterRef.current);
-    const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 3;
+    const canUsePreload = !!preload && preload.src === nextUrl && preload.readyState >= 2;
 
     if (canUsePreload) {
       audio.src = preload.src;
