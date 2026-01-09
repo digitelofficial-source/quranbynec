@@ -295,9 +295,9 @@ export function QuranProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useQuran() {
+export function useQuran(): QuranContextType {
   const context = useContext(QuranContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useQuran must be used within a QuranProvider');
   }
   return context;
