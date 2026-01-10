@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Book, Layers, ChevronRight, Sparkles } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Book, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/layout/Header';
 import DailyAyah from '@/components/quran/DailyAyah';
-import SurahCard from '@/components/quran/SurahCard';
-import JuzCard from '@/components/quran/JuzCard';
 import HomeAudioPlayer from '@/components/quran/HomeAudioPlayer';
 import PhysicalQuranReader from '@/components/quran/PhysicalQuranReader';
 import FeaturesSection from '@/components/quran/FeaturesSection';
@@ -16,7 +12,7 @@ import QuickLinksSection from '@/components/quran/QuickLinksSection';
 import ReadingStreakCard from '@/components/quran/ReadingStreakCard';
 import AchievementsCard from '@/components/quran/AchievementsCard';
 import ReadingGoalsCard from '@/components/quran/ReadingGoalsCard';
-import { fetchAllSurahs, JUZ_INFO } from '@/lib/quran-api';
+import { fetchAllSurahs } from '@/lib/quran-api';
 import { Surah } from '@/types/quran';
 import { useQuran } from '@/context/QuranContext';
 import { Link } from 'react-router-dom';
@@ -24,8 +20,6 @@ import { Link } from 'react-router-dom';
 export default function Index() {
   const { readingProgress } = useQuran();
   const [surahs, setSurahs] = useState<Surah[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'surah' | 'juz'>('surah');
 
   useEffect(() => {
     async function loadSurahs() {
@@ -34,8 +28,6 @@ export default function Index() {
         setSurahs(data);
       } catch (error) {
         console.error('Failed to load surahs:', error);
-      } finally {
-        setIsLoading(false);
       }
     }
     loadSurahs();
@@ -52,7 +44,7 @@ export default function Index() {
 
       <main className="container px-4 py-8">
         {/* Hero Section */}
-        <section className="text-center mb-16 pt-8 animate-fade-in">
+        <section className="text-center mb-12 pt-8 animate-fade-in">
           <p className="bismillah text-2xl md:text-3xl mb-6">
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </p>
@@ -81,6 +73,23 @@ export default function Index() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>
+          </div>
+        </section>
+
+        {/* Reading Progress Section - Mobile Widget Style */}
+        <section className="mb-12 animate-slide-up">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              Your Reading Journey
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Track your progress, maintain streaks, and unlock achievements
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ReadingStreakCard />
+            <ReadingGoalsCard />
+            <AchievementsCard />
           </div>
         </section>
 
@@ -132,22 +141,6 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Reading Progress Section */}
-        <section className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Your Reading Journey
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Track your progress, maintain streaks, and unlock achievements
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ReadingStreakCard />
-            <ReadingGoalsCard />
-            <AchievementsCard />
-          </div>
-        </section>
 
         {/* Daily Ayah */}
         <section className="mb-16">
@@ -171,88 +164,6 @@ export default function Index() {
         {/* About Section */}
         <AboutSection />
 
-        {/* Browse Section */}
-        <section className="mb-16 mt-16">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Browse the Quran
-              </h2>
-              <p className="text-muted-foreground">Navigate by Surah or Juz</p>
-            </div>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'surah' | 'juz')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="surah" className="gap-2">
-                  <Book className="h-4 w-4" />
-                  Surah
-                </TabsTrigger>
-                <TabsTrigger value="juz" className="gap-2">
-                  <Layers className="h-4 w-4" />
-                  Juz
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Content Grid */}
-          {viewMode === 'surah' ? (
-            <>
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-border">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="flex-1">
-                          <Skeleton className="h-4 w-24 mb-2" />
-                          <Skeleton className="h-3 w-32" />
-                        </div>
-                        <Skeleton className="h-6 w-16" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {surahs.slice(0, 12).map((surah, index) => (
-                      <SurahCard key={surah.number} surah={surah} index={index} />
-                    ))}
-                  </div>
-                  <div className="text-center mt-8">
-                    <Link to="/surah">
-                      <Button variant="outline" size="lg" className="gap-2">
-                        View All 114 Surahs
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {JUZ_INFO.slice(0, 12).map((juz, index) => (
-                  <JuzCard 
-                    key={juz.number} 
-                    juz={juz} 
-                    surahName={getSurahName(juz.startSurah)}
-                    index={index}
-                  />
-                ))}
-              </div>
-              <div className="text-center mt-8">
-                <Link to="/juz">
-                  <Button variant="outline" size="lg" className="gap-2">
-                    View All 30 Juz
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </>
-          )}
-        </section>
       </main>
 
       {/* Footer */}
