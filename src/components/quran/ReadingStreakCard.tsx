@@ -1,10 +1,13 @@
-import { Flame, Trophy, Calendar, Target, Zap } from 'lucide-react';
+import { Flame, Trophy, Calendar, Target, Zap, Bell, BellRing } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { useQuran } from '@/context/QuranContext';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function ReadingStreakCard() {
   const { readingStreak, readingGoal, getTodayStats } = useQuran();
+  const { isSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
   const todayStats = getTodayStats();
 
   const ayahProgress = todayStats ? (todayStats.ayahsRead / readingGoal.dailyAyahs) * 100 : 0;
@@ -113,6 +116,31 @@ export default function ReadingStreakCard() {
             })}
           </div>
         </div>
+
+        {/* Notification Toggle */}
+        {isSupported && (
+          <div className="mt-4 pt-3 border-t border-border/50">
+            <Button
+              variant={isSubscribed ? "secondary" : "outline"}
+              size="sm"
+              className="w-full gap-2"
+              onClick={() => isSubscribed ? unsubscribe() : subscribe()}
+              disabled={isLoading}
+            >
+              {isSubscribed ? (
+                <>
+                  <BellRing className="h-4 w-4 text-green-500" />
+                  <span className="text-xs">Reminders On</span>
+                </>
+              ) : (
+                <>
+                  <Bell className="h-4 w-4" />
+                  <span className="text-xs">Enable Daily Reminders</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
