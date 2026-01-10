@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { PageTransition } from "./components/PageTransition";
 import Index from "./pages/Index";
 import SurahPage from "./pages/SurahPage";
 import SurahListPage from "./pages/SurahListPage";
@@ -45,6 +47,24 @@ function ScrollToTop() {
   return null;
 }
 
+function AnimatedRoutes() {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+        <Route path="/surah" element={<PageTransition><SurahListPage /></PageTransition>} />
+        <Route path="/surah/:number" element={<PageTransition><SurahPage /></PageTransition>} />
+        <Route path="/juz" element={<PageTransition><JuzListPage /></PageTransition>} />
+        <Route path="/juz/:number" element={<PageTransition><JuzPage /></PageTransition>} />
+        <Route path="/bookmarks" element={<PageTransition><BookmarksPage /></PageTransition>} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -53,15 +73,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/surah" element={<SurahListPage />} />
-          <Route path="/surah/:number" element={<SurahPage />} />
-          <Route path="/juz" element={<JuzListPage />} />
-          <Route path="/juz/:number" element={<JuzPage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
